@@ -519,6 +519,9 @@ ${JSON.stringify(wardrobeItems.map((i) => ({ name: i.name, category: i.category,
 // Virtual try-on & Style Makeover
 // ---------------------------------------------------------------------------
 
+// Item types let the app show a matching product photo for each suggestion.
+const ACCESSORY_TYPES = ['watch', 'sunglasses', 'glasses', 'belt', 'bag', 'necklace', 'bracelet', 'ring', 'earrings', 'hat', 'cap', 'scarf', 'other'];
+const FOOTWEAR_TYPES = ['sneakers', 'boots', 'loafers', 'formal-shoes', 'sandals', 'heels', 'other'];
 const STYLE_CATEGORIES = ['Casual', 'Smart Casual', 'Formal', 'Streetwear', 'Minimal', 'Classic', 'Sporty', 'Ethnic', 'Bohemian'];
 
 // Shared by both image prompts: what must not change about the person.
@@ -555,17 +558,31 @@ async function analyzeMakeover({ photo, user, wardrobeItems = [] }) {
   const wardrobe = wardrobeItems.length
     ? wardrobeItems.slice(0, 60).map((i) => `- ${i.name} (${[i.category, i.colors?.join('/')].filter(Boolean).join(', ')})`).join('\n')
     : '';
+  const item = (types, description) => ({
+    type: 'array',
+    description,
+    items: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Short item name, 2-4 words, e.g. "Silver link necklace"' },
+        type: { type: 'string', enum: types },
+      },
+      required: ['name', 'type'],
+    },
+  });
   const option = {
     type: 'object',
     properties: {
       name: { type: 'string', description: 'Short, evocative name for the look, max 5 words' },
       styleCategory: { type: 'string', enum: STYLE_CATEGORIES },
-      summary: { type: 'string', description: '1-2 sentences on the idea behind the look and why it suits this outfit' },
-      clothingChanges: stringArray('2-4 concrete clothing changes: colours, alternative pieces, fit, layering'),
-      accessories: stringArray('2-4 specific accessories, e.g. "thin brown leather belt", "silver minimalist watch"'),
-      footwear: stringArray('1-2 specific footwear choices'),
+      summary: { type: 'string', description: 'One sentence, max 18 words, on the idea behind the look' },
+      clothingChanges: stringArray('2-3 concrete clothing changes, max 8 words each, e.g. "Olive utility jacket over the white tee"'),
+      accessories: item(ACCESSORY_TYPES, '2-3 specific accessories'),
+      footwear: item(FOOTWEAR_TYPES, '1 specific footwear choice'),
+      pros: stringArray('2 short reasons this direction suits this person and outfit, max 7 words each'),
+      cons: stringArray('1-2 short trade-offs or watch-outs, max 7 words each'),
     },
-    required: ['name', 'styleCategory', 'summary', 'clothingChanges', 'accessories', 'footwear'],
+    required: ['name', 'styleCategory', 'summary', 'clothingChanges', 'accessories', 'footwear', 'pros', 'cons'],
   };
 
   const result = await gemini.generateJSON({
@@ -610,16 +627,29 @@ ${wardrobe ? `Pieces they already own (mention one by name when it fits an optio
 function sanitizeStyleOption(option) {
   if (!option || typeof option !== 'object') return null;
   const text = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
-  const list = (value) => (Array.isArray(value) ? value.map((v) => text(v, 200)).filter(Boolean).slice(0, 6) : []);
+  const list = (value, limit = 6) => (Array.isArray(value) ? value.map((v) => text(v, 200)).filter(Boolean).slice(0, limit) : []);
+  // Accessories/footwear arrive as { name, type } from analysis, or as plain
+  // names when an option comes back from the client or a saved look.
+  const items = (value, types) => (Array.isArray(value) ? value : [])
+    .map((v) => (typeof v === 'string' ? { name: v } : v))
+    .map((v) => ({ name: text(v?.name, 80), type: types.includes(v?.type) ? v.type : 'other' }))
+    .filter((v) => v.name)
+    .slice(0, 4);
   const name = text(option.name, 80);
   if (!name) return null;
+  const accessories = items(option.accessories, ACCESSORY_TYPES);
+  const footwear = items(option.footwear, FOOTWEAR_TYPES);
   return {
     name,
     styleCategory: STYLE_CATEGORIES.includes(option.styleCategory) ? option.styleCategory : null,
     summary: text(option.summary, 500),
     clothingChanges: list(option.clothingChanges),
-    accessories: list(option.accessories),
-    footwear: list(option.footwear),
+    accessories: accessories.map((a) => a.name),
+    accessoryTypes: accessories.map((a) => a.type),
+    footwear: footwear.map((f) => f.name),
+    footwearTypes: footwear.map((f) => f.type),
+    pros: list(option.pros, 3),
+    cons: list(option.cons, 3),
   };
 }
 

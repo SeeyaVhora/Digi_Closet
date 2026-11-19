@@ -39,7 +39,7 @@ function ProfileForm({ authUser, form, setForm, toggleArrayItem, handleSubmit, f
       <Card>
         <h2 className="section__title">Basic Information</h2>
         <div className="form-grid">
-          <Input label="Name" value={authUser?.name || ''} disabled />
+          <Input label="Name" name="name" value={form.name} onChange={update('name')} maxLength={60} autoComplete="name" />
           {authUser?.email && <Input label="Email" value={authUser.email} disabled />}
           {authUser?.phoneNumber && <Input label="Mobile number" value={authUser.phoneNumber} disabled />}
         </div>
@@ -103,10 +103,10 @@ function ProfileForm({ authUser, form, setForm, toggleArrayItem, handleSubmit, f
 }
 
 export default function Profile() {
-  const { user: authUser } = useAuth();
+  const { user: authUser, refreshProfile } = useAuth();
   const { profile, loading, error, saving, updateProfile, deleteProfileData, refetch } = useProfile();
   const [form, setForm] = useState({
-    preferredStyles: [], favoriteColors: [], dislikedColors: [], preferredOccasions: [],
+    name: '', preferredStyles: [], favoriteColors: [], dislikedColors: [], preferredOccasions: [],
     budgetMin: '', budgetMax: '', height: '', weight: '', consentGiven: false,
   });
   const [success, setSuccess] = useState(false);
@@ -118,6 +118,7 @@ export default function Profile() {
       const sp = profile.stylePreferences || {};
       const pp = profile.physicalProfile || {};
       setForm({
+        name: profile.name || '',
         preferredStyles: sp.preferredStyles || [],
         favoriteColors: sp.favoriteColors || [],
         dislikedColors: sp.dislikedColors || [],
@@ -143,8 +144,14 @@ export default function Profile() {
     e.preventDefault();
     setFormError('');
     setSuccess(false);
+    const name = form.name.trim();
+    if (!name) {
+      setFormError('Please enter your name.');
+      return;
+    }
     try {
       await updateProfile({
+        name,
         stylePreferences: {
           preferredStyles: form.preferredStyles,
           favoriteColors: form.favoriteColors,
@@ -160,6 +167,8 @@ export default function Profile() {
         },
         onboardingCompleted: true,
       });
+      // The sidebar, top bar and greeting read the signed-in user; refresh it.
+      await refreshProfile().catch(() => {});
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {

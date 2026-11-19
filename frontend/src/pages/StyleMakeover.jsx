@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Wand2 } from 'lucide-react';
+import { Sparkles, Wand2, Plus, Minus } from 'lucide-react';
 import useLooks from '../hooks/useLooks';
 import { getErrorMessage } from '../services/api';
 import PageHeader from '../components/PageHeader';
@@ -8,6 +8,7 @@ import Button from '../components/Button';
 import UploadDropzone from '../components/UploadDropzone';
 import LookResult from '../components/LookResult';
 import LookGallery from '../components/LookGallery';
+import { itemImage } from '../utils/looks';
 import '../styles/critic-palette.css';
 import '../styles/looks.css';
 
@@ -24,6 +25,10 @@ function SuggestionList({ title, items }) {
 }
 
 function StyleOptionCard({ option, onGenerate, generating, disabled }) {
+  const pieces = [
+    ...option.accessories.map((name, i) => ({ name, image: itemImage(option.accessoryTypes?.[i], name) })),
+    ...option.footwear.map((name, i) => ({ name, image: itemImage(option.footwearTypes?.[i], name, 'ankle-boots'), label: 'Footwear' })),
+  ];
   return (
     <Card className="makeover-option">
       <div className="makeover-option__header">
@@ -31,11 +36,44 @@ function StyleOptionCard({ option, onGenerate, generating, disabled }) {
         {option.styleCategory && <span className="makeover-option__category">{option.styleCategory}</span>}
       </div>
       <p className="makeover-option__summary">{option.summary}</p>
-      <div>
-        <SuggestionList title="Clothing" items={option.clothingChanges} />
-        <SuggestionList title="Accessories" items={option.accessories} />
-        <SuggestionList title="Footwear" items={option.footwear} />
-      </div>
+
+      {option.clothingChanges.length > 0 && (
+        <ul className="makeover-option__changes">
+          {option.clothingChanges.map((text) => <li key={text}>{text}</li>)}
+        </ul>
+      )}
+
+      {pieces.length > 0 && (
+        <div className="makeover-pieces" aria-label="Accessories and footwear">
+          {pieces.map(({ name, image, label }) => (
+            <figure key={name} className="makeover-piece">
+              <div className="makeover-piece__image img-zoom"><img src={image} alt="" loading="lazy" /></div>
+              <figcaption>
+                {label && <small>{label}</small>}
+                {name}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      )}
+
+      {(option.pros?.length > 0 || option.cons?.length > 0) && (
+        <div className="makeover-verdict">
+          {option.pros?.length > 0 && (
+            <div>
+              <h4>Works because</h4>
+              <ul>{option.pros.map((text) => <li key={text} className="is-pro"><Plus size={12} /> {text}</li>)}</ul>
+            </div>
+          )}
+          {option.cons?.length > 0 && (
+            <div>
+              <h4>Watch out for</h4>
+              <ul>{option.cons.map((text) => <li key={text} className="is-con"><Minus size={12} /> {text}</li>)}</ul>
+            </div>
+          )}
+        </div>
+      )}
+
       <Button variant="outline" fullWidth onClick={onGenerate} loading={generating} disabled={disabled}>
         <Wand2 size={16} /> Generate this look
       </Button>

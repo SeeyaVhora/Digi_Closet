@@ -15,7 +15,15 @@ const getProfile = async (req, res, next) => {
 // PUT /api/profile
 const updateProfile = async (req, res, next) => {
   try {
-    const { stylePreferences, physicalProfile, onboardingCompleted, privacySettings } = req.body;
+    const { name, stylePreferences, physicalProfile, onboardingCompleted, privacySettings } = req.body;
+
+    if (name !== undefined) {
+      const trimmed = typeof name === 'string' ? name.trim().replace(/\s+/g, ' ') : '';
+      if (!trimmed || trimmed.length > 60) {
+        return res.status(400).json({ success: false, message: 'Enter a name between 1 and 60 characters.' });
+      }
+      req.user.name = trimmed;
+    }
 
     if (stylePreferences) {
       req.user.stylePreferences = { ...req.user.stylePreferences.toObject(), ...stylePreferences };

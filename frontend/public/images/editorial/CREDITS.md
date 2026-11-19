@@ -64,4 +64,10 @@ Photos from [Unsplash](https://unsplash.com), used under the Unsplash License
 | felt-hat-knit.jpg | photo-1611042553365-9b101441c135 |
 | grey-shirt-studio.jpg | photo-1601762603339-fd61e28b698a |
 | leather-jacket-street.jpg | photo-1520975954732-35dd22299614 |
-| white-blazer-sunlit.jpg | photo-1617019114583-affb34d1b3cd |
+| acc-necklace.jpg | photo-1515562141207-7a88fb7ce338 |
+| acc-hat.jpg | photo-1572307480813-ceb0e59d8325 |
+| acc-cap.jpg | photo-1588850561407-ed78c282e89b |
+| acc-sneakers.jpg | photo-1608231387042-66d1773070a5 |
+| acc-bag.jpg | photo-1605733513597-a8f8341084e6 |
+| acc-ring.jpg | photo-1605100804763-247f67b3557e |
+| acc-chains.jpg | photo-1606760227091-3dd870d97f1d |

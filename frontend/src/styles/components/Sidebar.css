@@ -57,18 +57,19 @@
   padding: 0.4375rem var(--space-2);
   border: none;
   background: none;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-family: var(--font-nav);
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
   text-align: left;
   transition: color var(--transition-fast), background var(--transition-fast);
 }
-.sidebar__link svg { flex-shrink: 0; color: var(--text-muted); transition: color var(--transition-fast); }
-.sidebar__link:hover { color: var(--text-heading); }
-.sidebar__link:hover svg { color: var(--text-heading); }
+.sidebar__link svg { flex-shrink: 0; color: var(--color-text-primary); transition: color var(--transition-fast); }
+.sidebar__link:hover { background: var(--bg-surface-hover); }
 /* Active: a fine dark rule on the left, like a marker in a printed index. */
 .sidebar__link--active,
-.sidebar__link--active:hover { background: var(--beige); color: var(--text-heading); font-weight: 600; }
+.sidebar__link--active:hover { background: var(--beige); color: var(--color-text-primary); font-weight: 500; }
 .sidebar__link--active svg { color: var(--brown-dark); }
 .sidebar__link--active::before { content: ''; position: absolute; left: 0; top: 0.375rem; bottom: 0.375rem; width: 2px; background: var(--brown-dark); }
 

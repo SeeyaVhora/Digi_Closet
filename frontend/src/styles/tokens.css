@@ -96,6 +96,7 @@
   /* --- Typography --- */
   /* ===== Typography ===== */
   --font-body: 'Manrope', system-ui, -apple-system, sans-serif;           /* interface */
+  --font-nav: 'Inter Tight', 'Helvetica Neue', Arial, sans-serif;          /* navigation lists */
   --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif; /* editorial headings */
   --font-editorial: 'Playfair Display', Georgia, serif;                   /* highlighted phrases */
   --font-campaign: 'Archivo', 'Helvetica Neue', Arial, sans-serif;        /* large sans campaign line */

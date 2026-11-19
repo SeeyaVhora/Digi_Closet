@@ -27,7 +27,7 @@ const TODAY = [
 
 const EXPLORE = [
   { label: 'Minimalist', note: 'Fewer pieces, better lines.', to: outfitsFor({ style: 'Minimal' }), image: img('white-tee-beige') },
-  { label: 'Old Money', note: 'Quiet tailoring, warm neutrals.', to: outfitsFor({ style: 'Classic' }), image: img('white-blazer-studio') },
+  { label: 'Old Money', note: 'Quiet tailoring, warm neutrals.', to: outfitsFor({ style: 'Classic' }), image: img('camel-trench') },
   { label: 'Streetwear', note: 'Relaxed shapes with an edge.', to: outfitsFor({ style: 'Streetwear' }), image: img('street-seated') },
   { label: 'Casual', note: 'Denim, cotton, ease.', to: outfitsFor({ style: 'Casual' }), image: img('denim-jacket-seated') },
   { label: 'Business Casual', note: 'Sharp, without the tie.', to: outfitsFor({ style: 'Smart Casual', occasion: 'Office' }), image: img('grey-blazer-portrait') },
@@ -75,48 +75,6 @@ function useLocalWeather() {
     );
   }, [fetchWeather]);
   return weather;
-}
-
-// Editorial grid for the dashboard hero: one portrait split in black and white
-// across the grid, with colour portraits set into three of the nine tiles.
-const COLLAGE_BASE = img('white-blazer-studio');
-const COLLAGE_COLOUR = {
-  0: { image: img('white-blazer-studio'), alt: 'Woman in a tailored white blazer', focus: 'center 18%' },
-  5: { image: img('grey-shirt-studio'), alt: 'Woman in a slate shirt in the studio', focus: 'center 20%' },
-  6: { image: img('white-coat-peach'), alt: 'Woman in a white coat', focus: 'center 15%' },
-};
-
-function HeroCollage() {
-  return (
-    <div className="collage" style={{ '--collage-base': `url(${COLLAGE_BASE})` }}>
-      {Array.from({ length: 9 }, (_, index) => {
-        const colour = COLLAGE_COLOUR[index];
-        if (colour) {
-          return (
-            <figure key={index} className="collage__tile collage__tile--colour">
-              <img src={colour.image} alt={colour.alt} style={{ objectPosition: colour.focus }} />
-            </figure>
-          );
-        }
-        return (
-          <div
-            key={index}
-            className="collage__tile collage__tile--mono"
-            style={{ '--col': index % 3, '--row': Math.floor(index / 3) }}
-            aria-hidden="true"
-          >
-            {index === 8 && (
-              <p className="collage__caption">
-                <strong>Your wardrobe</strong>
-                <span>Your expression</span>
-                <small>DigiCloset</small>
-              </p>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
 }
 
 function FeaturedOutfit({ outfit, source, onFavorite, onWear, worn, busy }) {
@@ -174,7 +132,9 @@ export default function Dashboard() {
     api.get('/looks').then(({ data }) => setSavedLookCount(data.data.looks.length)).catch(() => setSavedLookCount(null));
   }, []);
 
-  const firstName = (user?.name || firebaseUser?.displayName || '').split(' ')[0] || 'there';
+  // Names derived from an email address arrive in lower case; capitalise for display.
+  const rawFirst = (user?.name || firebaseUser?.displayName || '').split(' ')[0] || 'there';
+  const firstName = rawFirst.charAt(0).toUpperCase() + rawFirst.slice(1);
   const todaysPlan = plans[today];
 
   // Today's plan first, then a favourite, then the most recently saved outfit.
@@ -224,7 +184,10 @@ export default function Dashboard() {
       <header className="studio-greeting">
         <div>
           <span className="eyebrow">Your personal style studio</span>
-          <h1 className="studio-greeting__title">{greeting()}, <em>{firstName}.</em></h1>
+          <h1 className="studio-greeting__title">
+            <span className="studio-greeting__lead-in">{greeting()},</span>
+            <span className="studio-greeting__name">{firstName}.</span>
+          </h1>
           <p className="studio-greeting__lead">Something great is waiting in your wardrobe.</p>
         </div>
         <dl className="studio-greeting__meta">
@@ -237,7 +200,7 @@ export default function Dashboard() {
 
       {/* Editorial hero */}
       <section className="studio-hero">
-        <HeroCollage />
+        <div className="studio-hero__image img-zoom"><img src={img('white-blazer-studio')} alt="Woman in a cream tailored blazer with a red rose" /></div>
         <div className="studio-hero__text">
           <span className="eyebrow">Made for your everyday</span>
           <h2 className="studio-hero__title">Your wardrobe.<br /><em>Your expression.</em></h2>

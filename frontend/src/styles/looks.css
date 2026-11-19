@@ -84,7 +84,6 @@
 /* --- Makeover options --- */
 .makeover-options { display: grid; gap: var(--space-4); }
 .makeover-option { display: flex; flex-direction: column; gap: var(--space-4); }
-.makeover-option > div:not(.makeover-option__header) { flex: 1; }
 .makeover-option__header { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
 .makeover-option__name { font-size: var(--text-lg); font-weight: 500; }
 .makeover-option__category {
@@ -96,6 +95,25 @@
   color: var(--accent);
 }
 .makeover-option__summary { font-size: var(--text-sm); line-height: 1.6; color: var(--text-secondary); }
+.makeover-option__changes { display: flex; flex-direction: column; gap: var(--space-1-5); list-style: none; }
+.makeover-option__changes li { position: relative; padding-left: var(--space-4); font-size: var(--text-sm); line-height: 1.5; color: var(--text-primary); }
+.makeover-option__changes li::before { content: ''; position: absolute; left: 0; top: 0.7em; width: 0.5rem; height: 1px; background: var(--color-taupe); }
+
+/* Accessories and footwear as a small product strip. */
+.makeover-pieces { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); gap: var(--space-3); }
+.makeover-piece { display: flex; flex-direction: column; gap: var(--space-1-5); margin: 0; }
+.makeover-piece__image { aspect-ratio: 1; background: var(--color-white); }
+.makeover-piece figcaption { display: flex; flex-direction: column; font-size: var(--text-xs); line-height: 1.35; color: var(--text-primary); }
+.makeover-piece figcaption small { font-size: 0.5625rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); }
+
+/* Positives and watch-outs side by side. */
+.makeover-verdict { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); flex: 1; align-content: start; padding-top: var(--space-4); border-top: 1px solid var(--border-subtle); }
+.makeover-verdict h4 { margin-bottom: var(--space-2); font-family: var(--font-body); font-size: 0.625rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent); }
+.makeover-verdict ul { display: flex; flex-direction: column; gap: var(--space-1-5); list-style: none; }
+.makeover-verdict li { display: flex; align-items: flex-start; gap: var(--space-1-5); font-size: var(--text-xs); line-height: 1.45; color: var(--text-primary); }
+.makeover-verdict li svg { flex-shrink: 0; margin-top: 0.15rem; }
+.makeover-verdict .is-pro svg { color: var(--color-success); }
+.makeover-verdict .is-con svg { color: var(--color-danger); }
 
 /* --- Saved looks --- */
 .look-gallery__header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-4); }
