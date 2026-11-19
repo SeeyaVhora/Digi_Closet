@@ -323,7 +323,7 @@ export default function Onboarding() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <strong>{b.label}</strong>
-                    {budgetRange?.label === b.label && <CheckCircle2 size={18} color="var(--accent-violet)" />}
+                    {budgetRange?.label === b.label && <CheckCircle2 size={18} color="var(--accent)" />}
                   </div>
                   <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                     {b.desc}

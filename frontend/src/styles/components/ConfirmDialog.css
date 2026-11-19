@@ -10,8 +10,8 @@
   color: var(--color-danger);
 }
 .confirm-dialog__icon--neutral {
-  background: var(--accent-violet-soft);
-  color: var(--accent-violet);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 .confirm-dialog__message {
   font-size: var(--text-sm);

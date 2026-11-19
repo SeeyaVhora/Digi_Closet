@@ -47,8 +47,8 @@
 .input:hover { border-color: var(--border-strong); }
 .input:focus {
   outline: none;
-  border-color: var(--accent-violet);
-  box-shadow: 0 0 0 3px var(--accent-violet-soft);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 .input:disabled { opacity: 0.5; cursor: not-allowed; }
 .input--with-icon { padding-left: 2.25rem; }

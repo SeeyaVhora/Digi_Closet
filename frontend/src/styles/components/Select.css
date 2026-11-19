@@ -16,8 +16,8 @@
 .select:hover { border-color: var(--border-strong); }
 .select:focus {
   outline: none;
-  border-color: var(--accent-violet);
-  box-shadow: 0 0 0 3px var(--accent-violet-soft);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 .select--error { border-color: var(--color-danger); }
 .select__chevron {

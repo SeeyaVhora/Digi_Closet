@@ -5,7 +5,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  background: var(--accent-gradient);
+  background: var(--accent);
   color: #fff;
   flex-shrink: 0;
 }

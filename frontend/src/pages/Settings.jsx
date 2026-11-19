@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Shield, LogOut, Trash2, Download, Moon, Bell,
-  KeyRound, User, Check, AlertTriangle
+  Shield, LogOut, Trash2, Download, KeyRound, User, AlertTriangle
 } from 'lucide-react';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../firebase';
@@ -20,8 +19,6 @@ export default function Settings() {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  const [theme, setTheme] = useState(() => localStorage.getItem('dc_theme') || 'dark-tech');
-  const [dailyReminders, setDailyReminders] = useState(() => localStorage.getItem('dc_reminders') === 'true');
   const [exporting, setExporting] = useState(false);
   const [resettingPw, setResettingPw] = useState(false);
 
@@ -40,19 +37,6 @@ export default function Settings() {
   const [showDeleteProfileConfirm, setShowDeleteProfileConfirm] = useState(false);
   const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
-  const handleThemeChange = (newTheme) => {
-    setTheme(newTheme);
-    localStorage.setItem('dc_theme', newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
-    showToast(`Theme set to ${newTheme}`, 'info');
-  };
-
-  const handleReminderToggle = (val) => {
-    setDailyReminders(val);
-    localStorage.setItem('dc_reminders', String(val));
-    showToast(val ? 'Daily outfit tips enabled!' : 'Daily outfit tips disabled.', 'info');
-  };
 
   const handlePrivacyToggle = async (field, value) => {
     try {
@@ -143,60 +127,8 @@ export default function Settings() {
     <div className="animate-fade-in" style={{ maxWidth: '42rem' }}>
       <PageHeader
         title="Settings & Privacy"
-        subtitle="Manage appearance, data portability, AI controls, and account security."
+        subtitle="Control how your data is used, export it, or delete your account."
       />
-
-      {/* Appearance / Theme */}
-      <Card className="section">
-        <h2 className="section__title">
-          <Moon size={18} style={{ verticalAlign: 'middle', marginRight: 'var(--space-2)' }} />
-          Appearance & Aesthetic
-        </h2>
-        <div className="selectable-cards" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
-          {[
-            { id: 'dark-tech', label: 'Dark Charcoal', desc: 'Sleek & modern tech aesthetic' },
-            { id: 'midnight-violet', label: 'Midnight Violet', desc: 'Vibrant electric purple glow' },
-            { id: 'obsidian-gold', label: 'Obsidian Minimal', desc: 'High-contrast luxury monochrome' },
-          ].map((th) => (
-            <div
-              key={th.id}
-              onClick={() => handleThemeChange(th.id)}
-              className={`selectable-card ${theme === th.id ? 'selectable-card--selected' : ''}`}
-              style={{ textAlign: 'left', padding: 'var(--space-3)' }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong style={{ fontSize: 'var(--text-sm)' }}>{th.label}</strong>
-                {theme === th.id && <Check size={14} color="var(--accent-violet)" />}
-              </div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                {th.desc}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Notifications & Smart Tips */}
-      <Card className="section">
-        <h2 className="section__title">
-          <Bell size={18} style={{ verticalAlign: 'middle', marginRight: 'var(--space-2)' }} />
-          Preferences & Notifications
-        </h2>
-        <div className="settings-row">
-          <div className="settings-row__info">
-            <span className="settings-row__title">Daily Weather Outfit Tips</span>
-            <span className="settings-row__desc">Get morning outfit suggestions based on local forecast.</span>
-          </div>
-          <label className="toggle-switch">
-            <input
-              type="checkbox"
-              checked={dailyReminders}
-              onChange={(e) => handleReminderToggle(e.target.checked)}
-            />
-            <span className="toggle-slider" />
-          </label>
-        </div>
-      </Card>
 
       {/* AI & Privacy Controls */}
       <Card className="section">
@@ -273,7 +205,7 @@ export default function Settings() {
       </Card>
 
       {/* Danger Zone */}
-      <Card className="section" style={{ borderColor: 'rgba(248, 113, 113, 0.3)' }}>
+      <Card className="section" style={{ borderColor: 'var(--color-danger)' }}>
         <h2 className="section__title" style={{ color: 'var(--color-danger)' }}>
           <AlertTriangle size={18} style={{ verticalAlign: 'middle', marginRight: 'var(--space-2)' }} />
           Danger Zone

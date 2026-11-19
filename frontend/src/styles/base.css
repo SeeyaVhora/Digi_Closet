@@ -10,7 +10,7 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
@@ -50,7 +50,7 @@ img {
 }
 
 ::selection {
-  background-color: var(--accent-violet);
+  background-color: var(--accent);
   color: #fff;
 }
 

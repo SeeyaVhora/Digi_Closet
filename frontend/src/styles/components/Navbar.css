@@ -1,7 +1,7 @@
 .navbar {
   width: 100%;
   border-bottom: 1px solid var(--border-subtle);
-  background: rgba(10, 10, 13, 0.85);
+  background: rgba(250, 248, 244, 0.9);
   backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
@@ -25,7 +25,7 @@
   width: 2rem;
   height: 2rem;
   border-radius: var(--radius-md);
-  background: var(--accent-gradient);
+  background: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;

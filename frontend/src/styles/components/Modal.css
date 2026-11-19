@@ -24,7 +24,7 @@
 .modal--sm { max-width: 24rem; }
 .modal--md { max-width: 28rem; }
 .modal--lg { max-width: 32rem; }
-.modal--xl { max-width: 40rem; }
+.modal--xl { max-width: 52rem; }
 
 .modal__header {
   display: flex;
@@ -46,7 +46,7 @@
   display: flex;
   transition: color var(--transition-fast), background var(--transition-fast);
 }
-.modal__close:hover { color: var(--text-primary); background: var(--bg-surface); }
+.modal__close:hover { color: var(--text-primary); background: var(--bg-surface-hover); }
 
 .modal__body {
   padding: var(--space-5) var(--space-6);

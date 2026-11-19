@@ -13,8 +13,8 @@
   transition: border-color var(--transition-base), background var(--transition-base);
 }
 .dropzone:hover, .dropzone--active {
-  border-color: var(--accent-violet);
-  background: var(--accent-violet-soft);
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 .dropzone__icon {
   width: 2.5rem;

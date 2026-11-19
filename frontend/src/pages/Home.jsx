@@ -1,21 +1,19 @@
 import { Link } from 'react-router-dom';
 import {
-  Sparkles, Shirt, Wand2, Palette, CalendarHeart, Wallet,
-  Camera, Bot, ArrowRight, MessageSquare,
+  Sparkles, Shirt, Wand2, Palette, CloudSun, Wallet, Search, Bot, ArrowRight,
 } from 'lucide-react';
 import Card from '../components/Card';
 import Button from '../components/Button';
 
 const features = [
-  { icon: Wand2, title: 'AI Outfit Recommendations', description: 'Get outfit combinations built from the clothes you already own, matched to occasion and weather.' },
-  { icon: Shirt, title: 'Digital Wardrobe', description: 'Catalog every item you own with photos, categories, colors, and occasions in one organized closet.' },
-  { icon: MessageSquare, title: 'AI Fashion Critic', description: 'Upload a look and get constructive, respectful feedback on color, balance, and styling.' },
-  { icon: Sparkles, title: 'Smart Clothes Finder', description: 'Search and filter a real product catalog by category, style, color, brand, and budget.' },
-  { icon: Wallet, title: 'Budget Shopping Assistant', description: 'Build a shopping list that respects your budget and prioritizes versatile pieces.' },
-  { icon: Camera, title: 'Virtual Try-On', description: 'Preview how a garment might look on you before you commit to a purchase.' },
-  { icon: CalendarHeart, title: 'Occasion-Based Styling', description: 'Dedicated outfit guidance for college, office, parties, weddings, dates, and more.' },
-  { icon: Palette, title: 'Color Combination Analyzer', description: 'Understand which colors pair well together with plain-language, practical advice.' },
-  { icon: Bot, title: 'AI Fashion Chatbot', description: 'Ask natural questions about your wardrobe and get grounded, honest answers.' },
+  { icon: Shirt, title: 'Digital Wardrobe', description: 'Photograph a piece and Gemini tags its category, colours, pattern and season. You review before it is saved.' },
+  { icon: Wand2, title: 'Outfit Generator', description: 'Complete looks built only from clothes you own, for the occasion, style, season and colours you pick.' },
+  { icon: CloudSun, title: 'Smart Picks', description: 'Daily suggestions for college, office, parties or travel that follow live weather and your favourite looks.' },
+  { icon: Sparkles, title: 'Fashion Critic', description: 'A score out of ten and constructive notes on colour, balance and fit for the occasion, from a photo or your wardrobe.' },
+  { icon: Palette, title: 'Colour Palette', description: 'Clothing colours suggested from a face photo, with swatches and combinations you can edit. The photo is never stored.' },
+  { icon: Bot, title: 'Stylist Chat', description: 'Ask what to wear, what goes with your black jeans or what to buy next. Answers use your actual wardrobe.' },
+  { icon: Search, title: 'Clothes Finder', description: 'Describe what you want in plain words, like "white sneakers under ₹2,000", and search real stores.' },
+  { icon: Wallet, title: 'Budget Planner', description: 'A prioritised shopping list that fills gaps in your wardrobe and never goes over your budget.' },
 ];
 
 export default function Home() {
@@ -44,7 +42,7 @@ export default function Home() {
         <div className="home-section__header">
           <h2 className="home-section__title">Everything you need to dress smarter</h2>
           <p className="home-section__subtitle">
-            Ten connected tools that work together — from your digital wardrobe to AI-powered styling advice.
+            Eight tools that share one wardrobe, so every suggestion starts from what you already own.
           </p>
         </div>
         <div className="home-feature-grid">

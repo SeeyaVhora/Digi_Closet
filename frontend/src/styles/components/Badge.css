@@ -7,8 +7,8 @@
   font-weight: 500;
   border-radius: var(--radius-full);
 }
-.badge--default { background: var(--bg-surface); color: var(--text-secondary); }
-.badge--accent { background: var(--accent-violet-soft); color: var(--accent-violet); }
+.badge--default { background: var(--bg-muted); color: var(--text-secondary); }
+.badge--accent { background: var(--accent-soft); color: var(--accent); }
 .badge--dark { background: var(--bg-surface-hover); color: var(--text-primary); }
 .badge--success { background: var(--color-success-soft); color: var(--color-success); }
 .badge--warning { background: var(--color-warning-soft); color: var(--color-warning); }

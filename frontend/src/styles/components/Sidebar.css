@@ -1,7 +1,7 @@
 .sidebar__backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--bg-overlay);
   backdrop-filter: blur(4px);
   z-index: calc(var(--z-sidebar) - 1);
 }
@@ -37,7 +37,7 @@
   border-radius: var(--radius-md);
   display: flex;
 }
-.sidebar__close:hover { color: var(--text-secondary); background: var(--bg-surface); }
+.sidebar__close:hover { color: var(--text-secondary); background: var(--bg-surface-hover); }
 
 .sidebar__nav {
   flex: 1;
@@ -66,10 +66,10 @@
   color: var(--text-secondary);
   transition: background var(--transition-fast), color var(--transition-fast);
 }
-.sidebar__link:hover { background: var(--bg-surface); color: var(--text-primary); }
+.sidebar__link:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
 .sidebar__link--active {
-  background: var(--accent-violet-soft);
-  color: var(--accent-violet);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 .sidebar__link-lock {
   margin-left: auto;
@@ -119,6 +119,6 @@
 .sidebar__logout:hover { background: var(--color-danger-soft); color: var(--color-danger); }
 
 @media (min-width: 1024px) {
-  .sidebar { position: static; transform: none; }
+  .sidebar { position: sticky; top: 0; height: 100vh; flex-shrink: 0; transform: none; }
   .sidebar__close { display: none; }
 }

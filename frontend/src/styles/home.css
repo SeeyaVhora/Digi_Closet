@@ -10,8 +10,8 @@
   gap: var(--space-2);
   padding: var(--space-1) var(--space-4);
   border-radius: var(--radius-full);
-  background: var(--accent-violet-soft);
-  color: var(--accent-violet);
+  background: var(--accent-soft);
+  color: var(--accent);
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -25,7 +25,7 @@
   margin-bottom: var(--space-5);
 }
 .home-hero__title span {
-  background: var(--accent-gradient);
+  background: var(--accent);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -81,8 +81,8 @@
   width: 2.75rem;
   height: 2.75rem;
   border-radius: var(--radius-lg);
-  background: var(--accent-violet-soft);
-  color: var(--accent-violet);
+  background: var(--accent-soft);
+  color: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;

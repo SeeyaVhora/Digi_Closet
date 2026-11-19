@@ -118,16 +118,16 @@ export default function TryOn() {
 
           {/* AI Fit & Silhouette Assessment */}
           {fit && (
-            <Card className="section" style={{ border: '1px solid var(--accent-violet-soft)' }}>
+            <Card className="section" style={{ border: '1px solid var(--accent-soft)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
                 <h2 className="section__title" style={{ margin: 0 }}>
-                  <Sparkles size={20} color="var(--accent-violet)" style={{ verticalAlign: 'middle', marginRight: 'var(--space-2)' }} />
+                  <Sparkles size={20} color="var(--accent)" style={{ verticalAlign: 'middle', marginRight: 'var(--space-2)' }} />
                   AI Fit & Silhouette Assessment
                 </h2>
                 {fit.fitScore && (
                   <span
                     style={{
-                      background: 'var(--accent-gradient)',
+                      background: 'var(--accent)',
                       color: '#fff',
                       padding: '0.25rem 0.75rem',
                       borderRadius: 'var(--radius-full)',
@@ -144,7 +144,7 @@ export default function TryOn() {
                 {fit.silhouetteVerdict && (
                   <div style={{ background: 'var(--bg-surface)', padding: 'var(--space-4)', borderRadius: 'var(--radius-lg)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-1)', fontWeight: 600 }}>
-                      <Shirt size={16} color="var(--accent-violet)" /> Silhouette & Proportion
+                      <Shirt size={16} color="var(--accent)" /> Silhouette & Proportion
                     </div>
                     <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', lineHeight: 1.5, margin: 0 }}>
                       {fit.silhouetteVerdict}
