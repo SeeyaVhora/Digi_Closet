@@ -6,7 +6,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Express.js](https://img.shields.io/badge/Express-5.x-black?logo=express)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-6.0%2B-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-2.0%20Flash-4285F4?logo=google)](https://ai.google.dev/)
+[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-3.5%20Flash%20Lite-4285F4?logo=google)](https://ai.google.dev/)
 [![License: ISC](https://img.shields.io/badge/License-ISC-yellow.svg)](https://opensource.org/licenses/ISC)
 
 > **DigiCloset** is an intelligent personal styling companion and digital wardrobe manager. It bridges the gap between what you own and what you wear, harnessing multimodal AI to curate daily outfits, critique style choices, analyze color palettes, and optimize shopping decisions based on your real wardrobe and personal body profile.
@@ -61,7 +61,7 @@ Most people wear only 20% of the clothing in their wardrobe, suffering from "clo
 - **Server Framework:** [Express.js v5](https://expressjs.com/)
 - **Database & ODM:** [MongoDB](https://www.mongodb.com/) with [Mongoose v9](https://mongoosejs.com/)
 - **Authentication Verification:** [Firebase Admin SDK](https://firebase.google.com/docs/admin/setup) (token validation & emulator support)
-- **Artificial Intelligence:** [Google Gemini API](https://ai.google.dev/) (`gemini-2.0-flash`) with transparent offline fallbacks
+- **Artificial Intelligence:** [Google Gemini API](https://ai.google.dev/) via the official `@google/genai` SDK (`gemini-3.5-flash-lite` by default, with an automatic fallback model). No mock responses.
 - **Weather Service:** [Open-Meteo API](https://open-meteo.com/) (zero-config, keyless weather data)
 - **File Uploads:** [Multer](https://github.com/expressjs/multer) (multipart form data with MIME validation)
 - **Rate Limiting:** [express-rate-limit](https://github.com/express-rate-limit/express-rate-limit)
@@ -73,8 +73,6 @@ Most people wear only 20% of the clothing in their wardrobe, suffering from "clo
 ```
 Digi_Closet/
 ├── backend/
-│   ├── database/
-│   │   └── seed.js             # Seeds initial catalog with 24 curated fashion items
 │   ├── src/
 │   │   ├── config/             # Database connection, env loader, Firebase Admin init
 │   │   ├── controllers/        # 12 Express controllers for each functional domain
@@ -155,10 +153,9 @@ npm run db:start
 ```
 *(Starts a local MongoDB instance isolated to `~/.digi-closet/mongodb-data`)*
 
-### Step 2: Seed Catalog Products (First Time Only)
+### Step 2: Start the Firebase Auth Emulator
 ```bash
-cd backend
-npm run seed
+firebase emulators:start --only auth --project demo-digi-closet
 ```
 
 ### Step 3: Start the Backend Server
@@ -192,7 +189,6 @@ Now open **`http://localhost:5173`** in your browser to begin exploring DigiClos
 |---------|--------|
 | `npm run dev` | Runs the Express API with `nodemon` for instant hot-reload on file edits. |
 | `npm start` | Launches the server in standard production mode using `node src/index.js`. |
-| `npm run seed` | Populates the MongoDB database with 24 fashion products for testing. |
 | `npm run db:start` | Launches a background `mongod` daemon pointing to local storage directory. |
 | `npm run db:stop` | Gracefully shuts down the background `mongod` instance. |
 
@@ -237,9 +233,10 @@ The DigiCloset backend exposes 12 domain route modules. Detailed request and res
 - **Cause:** The client is trying to reach the Firebase Auth Emulator, but the emulator is not running.
 - **Solution:** Either run `firebase emulators:start --only auth --project demo-digi-closet` in your terminal, or configure real Firebase credentials in `frontend/.env` and remove `VITE_FIREBASE_AUTH_EMULATOR_HOST`.
 
-### 3. "AI features return offline fallback results"
-- **Cause:** `GEMINI_API_KEY` is not provided in `backend/.env`.
-- **Solution:** This is intentional designed behavior! DigiCloset falls back to deterministic rule-based algorithms so the app remains fully functional without an API key. To enable live Gemini AI, generate a key at [Google AI Studio](https://aistudio.google.com/) and paste it into `backend/.env`.
+### 3. "AI features show 'Gemini is not configured' or 'temporarily overloaded'"
+- **Not configured:** add `GEMINI_API_KEY` to `backend/.env` (get one at [Google AI Studio](https://aistudio.google.com/)) and restart the backend. There is no offline mode, by design.
+- **Overloaded (503):** Google is short on capacity for that model. The backend already retries on `GEMINI_FALLBACK_MODEL`; wait a moment, or set `GEMINI_MODEL` to a model with more headroom.
+- **Clothes Finder shows no products:** live listings need `PRODUCT_SEARCH_API_KEY` (a [SerpApi](https://serpapi.com) key). Without it you get Gemini's parsed filters and marketplace search links only.
 
 ### 4. "Vite: Failed to load /api/wardrobe (500 Internal Server Error)"
 - **Cause:** The backend server is not running on port 5001.

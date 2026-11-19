@@ -73,7 +73,6 @@ frontend/
 │   ├── hooks/                      # Custom React hooks encapsulating data & API logic
 │   │   ├── useChat.js              # Conversation state, message sending, streaming
 │   │   ├── useOutfits.js           # Outfit recommendation fetch & save actions
-│   │   ├── useProducts.js          # Product catalog search, filtering, and favorites
 │   │   ├── useProfile.js           # User profile management, export, and account deletion
 │   │   ├── useShoppingList.js      # Budget shopping planner and list CRUD
 │   │   ├── useTryOn.js             # Photo upload, job polling, and fit analysis
@@ -89,15 +88,15 @@ frontend/
 │   │   ├── FashionCritic.jsx       # AI evaluation of outfits with score & improvement tips
 │   │   ├── Home.jsx                # Public landing page with product introduction
 │   │   ├── Login.jsx               # Email/Password and Google OAuth login
-│   │   ├── OccasionStyling.jsx     # Event-specific styling (Casual, Formal, Date, Wedding)
+│   │   ├── SmartRecommendations.jsx# Weather/preference-aware picks (today, college, office…)
 │   │   ├── Onboarding.jsx          # 5-step style personality and body profile wizard
 │   │   ├── OutfitRecommendations.jsx # Daily and personalized AI outfit builder
-│   │   ├── Products.jsx            # Smart product search and discovery catalog
+│   │   ├── ClothesFinder.jsx       # Natural-language product finder (live listings via SerpApi)
 │   │   ├── Profile.jsx             # User measurements, face shape, style preferences
 │   │   ├── Register.jsx            # Account creation with validation
 │   │   ├── SavedItems.jsx          # Bookmarked outfits, products, and shopping lists
 │   │   ├── Settings.jsx            # Account settings, themes, data export, danger zone
-│   │   ├── ShoppingAssistant.jsx   # AI-guided budget shopping planner
+│   │   ├── BudgetPlanner.jsx       # AI budget allocation that never exceeds the budget
 │   │   └── TryOn.jsx               # Virtual try-on upload with Gemini fit analysis
 │   ├── routes/
 │   │   ├── AppRoutes.jsx           # Top-level route switchboard using React Router
@@ -127,8 +126,6 @@ frontend/
 
 ```
 backend/
-├── database/
-│   └── seed.js                     # Populates MongoDB with 24 curated fashion catalog items
 ├── src/
 │   ├── config/
 │   │   ├── db.js                   # Mongoose connection manager with reconnection logic
@@ -139,7 +136,6 @@ backend/
 │   │   ├── chatController.js       # AI chat sessions and wardrobe-aware context injection
 │   │   ├── colorAnalyzerController.js # Color harmony calculations and contrast analysis
 │   │   ├── fashionCriticController.js # Outfit critique, scoring, and style critique
-│   │   ├── occasionStylingController.js # Occasion-based look recommendations
 │   │   ├── outfitController.js     # Wardrobe combination generator and saved outfits CRUD
 │   │   ├── productController.js    # Catalog search, filtering, and favorites management
 │   │   ├── profileController.js    # User profile updates, GDPR data export, account deletion
@@ -156,9 +152,8 @@ backend/
 │   ├── models/                     # 8 Mongoose Schema models
 │   │   ├── ClothingItem.js         # User's uploaded wardrobe piece with tags & category
 │   │   ├── Conversation.js         # Chat history with system prompt & message memory
-│   │   ├── Product.js              # Curated fashion catalog item for discovery & shopping
 │   │   ├── SavedOutfit.js          # Assembled outfit with composed wardrobe items
-│   │   ├── SavedProduct.js         # User's bookmarked external catalog product
+│   │   ├── SavedProduct.js         # Snapshot + link of a product bookmarked from live search
 │   │   ├── ShoppingList.js         # Custom shopping list with budget tracking
 │   │   ├── TryOnJob.js             # Try-on request record with fit analysis & status
 │   │   └── User.js                 # Core user record with style profile & measurements
@@ -167,7 +162,6 @@ backend/
 │   │   ├── chatRoutes.js           # POST /api/chat, GET/DELETE /api/chat/history
 │   │   ├── colorAnalyzerRoutes.js  # POST /api/colors/analyze
 │   │   ├── fashionCriticRoutes.js  # POST /api/fashion/critique
-│   │   ├── occasionStylingRoutes.js# POST /api/styling/recommend
 │   │   ├── outfitRoutes.js         # POST /api/outfits/recommend, CRUD /api/outfits/saved
 │   │   ├── productRoutes.js        # GET /api/products, POST /api/products/saved
 │   │   ├── profileRoutes.js        # GET/PUT /api/profile, POST /export, DELETE /account
@@ -177,9 +171,10 @@ backend/
 │   │   ├── weatherRoutes.js        # GET /api/weather/current
 │   │   └── index.js                # Master router mounting all sub-routes
 │   ├── services/                   # Business logic and external API integrations
-│   │   ├── geminiService.js        # Google Gemini AI prompts & robust offline fallbacks
+│   │   ├── geminiService.js        # @google/genai wrapper: retries, model fallback, error mapping
+│   │   ├── stylistService.js       # AI features: prompts, JSON schemas, output validation
 │   │   ├── imageService.js         # Local disk storage & Firebase Cloud Storage adapter
-│   │   ├── productSearchService.js # Catalog search and category matching logic
+│   │   ├── productSearchService.js # Pluggable live product search (SerpApi Google Shopping)
 │   │   ├── tryOnService.js         # Try-on queue processor and fit analysis integration
 │   │   └── weatherService.js       # Open-Meteo REST API wrapper
 │   └── index.js                    # Express application entry point

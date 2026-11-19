@@ -1,340 +1,166 @@
-# DigiCloset — API Reference Documentation
+# DigiCloset — API Reference
 
-All API endpoints are prefixed with `/api`. Authenticated endpoints require an `Authorization: Bearer <FIREBASE_ID_TOKEN>` header.
+All endpoints live under `/api`. Except for `/api/health` and `/api/weather`, every request needs a Firebase ID token:
 
----
+```
+Authorization: Bearer <firebase-id-token>
+```
 
-## 1. Authentication (`/api/auth`)
+Responses use the shape `{ "success": boolean, "message"?: string, "data"?: object }`. Errors return a non-2xx status with `success: false` and a human-readable `message`.
 
-### Synchronize User
-Syncs a Firebase-authenticated user into the MongoDB database upon login/signup.
+AI endpoints (marked **AI**) call Google Gemini. They share a rate limit of 15 requests per minute per client and return:
 
-- **URL:** `/api/auth/sync`
-- **Method:** `POST`
-- **Auth Required:** Yes (`Bearer <token>`)
-- **Body:**
-  ```json
-  {
-    "displayName": "Alex Morgan",
-    "photoURL": "https://example.com/avatar.jpg"
-  }
-  ```
-- **Response `200`:**
-  ```json
-  {
-    "success": true,
-    "user": {
-      "id": "670d8a...",
-      "firebaseUid": "abcd1234efgh",
-      "email": "alex@example.com",
-      "displayName": "Alex Morgan",
-      "styleProfile": {}
-    }
-  }
-  ```
+| Status | Meaning |
+| --- | --- |
+| 400 | Missing or invalid input (e.g. no image, wardrobe can't form an outfit) |
+| 422 | Gemini could not use the input (not clothing, no face visible, unreadable image) |
+| 429 | Rate limit reached |
+| 502 | Gemini rejected the request (bad key, unavailable model, malformed output) |
+| 503 | Gemini is overloaded or not configured |
 
-### Get Current User
-- **URL:** `/api/auth/me`
-- **Method:** `GET`
-- **Auth Required:** Yes
-- **Response `200`:** User profile object including permissions and timestamp.
+There is no mock or offline mode: if Gemini fails, the endpoint returns an error.
 
 ---
 
-## 2. User Profile & Settings (`/api/profile`)
+## Health
 
-### Get Profile
-- **URL:** `/api/profile`
-- **Method:** `GET`
-- **Auth Required:** Yes
-- **Response `200`:** Returns full user profile including faceShape, height, weight, sizes, preferences.
+`GET /api/health` — reports whether MongoDB is connected and which Gemini model and product search provider are configured. Returns `503` when the database is down.
 
-### Update Profile
-- **URL:** `/api/profile`
-- **Method:** `PUT`
-- **Auth Required:** Yes
-- **Body:**
-  ```json
-  {
-    "displayName": "Alex Morgan",
-    "styleProfile": {
-      "faceShape": "oval",
-      "heightCm": 178,
-      "weightKg": 70,
-      "shirtSize": "M",
-      "pantSize": "32",
-      "shoeSize": "10",
-      "favoriteColors": ["navy", "olive", "beige"],
-      "preferredStyles": ["minimalist", "casual"],
-      "avoidColors": ["neon"]
-    }
-  }
-  ```
+## Auth (`/api/auth`)
 
-### Export User Data (GDPR Compliance)
-- **URL:** `/api/profile/export`
-- **Method:** `POST`
-- **Auth Required:** Yes
-- **Response `200`:** Complete JSON dump containing user profile, wardrobe items, saved outfits, and shopping lists.
+| Method | Path | Notes |
+| --- | --- | --- |
+| POST | `/auth/sync` | Body `{ name? }`. Creates the Mongo profile on first call and updates the display name. |
+| GET | `/auth/me` | Current user profile. |
 
-### Delete Account & All Data
-- **URL:** `/api/profile/account`
-- **Method:** `DELETE`
-- **Auth Required:** Yes
-- **Response `200`:** Confirms permanent deletion of user document and all associated wardrobe/outfit/shopping records.
+## Profile (`/api/profile`)
 
----
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/profile` | Profile including `stylePreferences` and `colorPalette`. |
+| PUT | `/profile` | Body `{ stylePreferences?, physicalProfile?, privacySettings?, onboardingCompleted? }`. |
+| DELETE | `/profile` | Clears style and physical data, keeps the account. |
+| GET | `/profile/export` | Exports all of the user's data. |
+| DELETE | `/profile/account` | Deletes the user and everything they own. |
 
-## 3. Digital Wardrobe (`/api/wardrobe`)
+## Wardrobe (`/api/wardrobe`)
 
-### List Wardrobe Items
-- **URL:** `/api/wardrobe`
-- **Method:** `GET`
-- **Auth Required:** Yes
-- **Query Parameters:**
-  - `category` *(optional)*: `tops`, `bottoms`, `shoes`, `outerwear`, `accessories`
-  - `season` *(optional)*: `spring`, `summer`, `fall`, `winter`, `all-season`
-- **Response `200`:** Array of clothing items.
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/wardrobe` | Query: `search`, `category`, `season`, `occasion`, `color`, `sort` (`oldest`, `name`, `category`). |
+| GET | `/wardrobe/:id` | 403 if the item belongs to someone else. |
+| POST | `/wardrobe/classify` | **AI.** Multipart `image`. Returns `suggestion` `{ name, category, type, colors[primary, secondary?], pattern, style, occasions[], season[], confidence }`. Nothing is saved. |
+| POST | `/wardrobe/upload-image` | Multipart `image` (JPEG/PNG/WebP, max 5MB). Returns `{ imageUrl, imagePath }`. |
+| POST | `/wardrobe` | Body: `name`, `category` (required), `type`, `colors`, `pattern`, `season[]`, `style`, `occasions[]`, `size`, `brand`, `notes`, `imageUrl`, `imagePath`. |
+| PUT | `/wardrobe/:id` | Any of the fields above. |
+| DELETE | `/wardrobe/:id` | Also deletes the stored image. |
 
-### Add Wardrobe Item
-- **URL:** `/api/wardrobe`
-- **Method:** `POST`
-- **Auth Required:** Yes
-- **Content-Type:** `multipart/form-data`
-- **Fields:**
-  - `name`: String (e.g., "Navy Oxford Shirt")
-  - `category`: String (`tops`, `bottoms`, `shoes`, etc.)
-  - `color`: String (e.g., "Navy")
-  - `image`: File (JPEG, PNG, WebP)
-  - `season`: String *(optional)*
-  - `occasion`: String *(optional)*
-  - `tags`: Comma-separated strings *(optional)*
+Categories: `Tops, Shirts, T-Shirts, Trousers, Jeans, Skirts, Shorts, Dresses, Footwear, Outerwear, Accessories`.
 
-### Update Wardrobe Item
-- **URL:** `/api/wardrobe/:id`
-- **Method:** `PUT`
-- **Auth Required:** Yes
+## Outfits (`/api/outfits`)
 
-### Delete Wardrobe Item
-- **URL:** `/api/wardrobe/:id`
-- **Method:** `DELETE`
-- **Auth Required:** Yes
+### `POST /outfits/recommend` — AI outfit generator (**AI**)
 
----
+Body (all optional): `occasion`, `style`, `season`, `colors[]`, `city` (adds live weather), `surprise` (boolean), `excludeCombos` (array of item-id arrays already shown, for "show alternatives").
 
-## 4. AI Outfit Recommendations (`/api/outfits`)
+```json
+{
+  "outfits": [{
+    "title": "Classic Office Beige",
+    "styleCategory": "Smart Casual",
+    "occasion": "Office",
+    "itemIds": ["…"],
+    "topwearId": "…", "bottomwearId": "…", "layerId": null, "footwearId": "…", "accessoryIds": [],
+    "explanation": "…",
+    "styleTips": ["…"],
+    "missingItems": []
+  }],
+  "weather": "Overcast, 25°C, humidity 50% in Bengaluru",
+  "wardrobeCount": 8
+}
+```
 
-### Generate Outfit Recommendations
-- **URL:** `/api/outfits/recommend`
-- **Method:** `POST`
-- **Auth Required:** Yes
-- **Body:**
-  ```json
-  {
-    "occasion": "casual",
-    "weather": { "temperature": 22, "condition": "sunny" },
-    "style": "minimalist"
-  }
-  ```
-- **Response `200`:**
-  ```json
-  {
-    "success": true,
-    "mode": "gemini-ai",
-    "recommendations": [
-      {
-        "id": "outfit-1",
-        "title": "Clean Monochrome Casual",
-        "description": "A breathable ensemble suited for 22°C sunny weather.",
-        "items": [...],
-        "stylingTips": "Keep accessories minimal with a silver watch."
-      }
-    ]
-  }
-  ```
+Every id in `itemIds` is checked server-side against the user's wardrobe. Each outfit has one top + one bottom or a single dress. Returns 400 if the wardrobe can't make a complete outfit.
 
-### Save Outfit
-- **URL:** `/api/outfits/saved`
-- **Method:** `POST`
-- **Auth Required:** Yes
+### `POST /outfits/smart` — smart recommendations (**AI**)
 
-### Get Saved Outfits
-- **URL:** `/api/outfits/saved`
-- **Method:** `GET`
-- **Auth Required:** Yes
+Body: `preset` (`today`, `college`, `office`, `party`, `casual`, `travel`), `city` (default Bengaluru), `excludeCombos`. Uses live Open-Meteo weather, the user's style preferences and colour palette, and their saved/favourite outfits. The response adds `weather` (object), `label` and `usedHistory`.
 
-### Delete Saved Outfit
-- **URL:** `/api/outfits/saved/:id`
-- **Method:** `DELETE`
-- **Auth Required:** Yes
+### Saved outfits
 
----
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/outfits/saved` | Query `favorite=true` for favourites only. Items are populated. |
+| POST | `/outfits/saved` | Body `{ title, itemIds[], occasion?, styleCategory?, explanation?, styleTips?, source?, favorite? }`. All items must be the user's own. |
+| PUT | `/outfits/saved/:id/favorite` | Toggles favourite. |
+| DELETE | `/outfits/saved/:id` | |
 
-## 5. AI Fashion Critic (`/api/fashion`)
+## Fashion critic (`/api/fashion`)
 
-### Critique Outfit
-- **URL:** `/api/fashion/critique`
-- **Method:** `POST`
-- **Auth Required:** Yes
-- **Content-Type:** `multipart/form-data` or `application/json`
-- **Fields:**
-  - `image`: *(optional)* Uploaded outfit photo
-  - `occasion`: Expected occasion or context
-  - `itemIds`: *(optional)* Array of wardrobe item IDs
-- **Response `200`:**
-  ```json
-  {
-    "success": true,
-    "score": 8.5,
-    "verdict": "Sophisticated with strong proportions",
-    "strengths": ["Excellent color balance", "Well-fitted trousers"],
-    "improvements": ["Try a structured leather belt to anchor the waist"],
-    "colorHarmony": "Complementary blue and cognac",
-    "mode": "gemini-ai"
-  }
-  ```
+`POST /fashion/analyze` (**AI**). Multipart with an `image` **or** `itemIds` (JSON array, at least two of the user's items), plus an optional `occasion`.
 
----
+Returns `score` (1–10), `verdict`, `summary`, `whatLooksGood[]`, `improvements[]`, `colorFeedback`, `combinationFeedback`, `balanceFeedback`, `occasionFit`, `accessoriesFeedback`, `suggestions[]` and `alternatives[]`. Alternatives are validated outfits built from the user's wardrobe, in the same shape as the generator's outfits.
 
-## 6. Color Analyzer (`/api/colors`)
+## Personal colour palette (`/api/colors`)
 
-### Analyze Color Harmony
-- **URL:** `/api/colors/analyze`
-- **Method:** `POST`
-- **Auth Required:** Yes
-- **Body:**
-  ```json
-  {
-    "primaryColor": "#1E3A8A",
-    "secondaryColors": ["#F3F4F6", "#D97706"]
-  }
-  ```
-- **Response `200`:** Returns harmony rating (0-100), harmony rule applied (monochromatic, complementary, triadic), and suggested accent colors.
+| Method | Path | Notes |
+| --- | --- | --- |
+| POST | `/colors/palette/analyze` | **AI.** Multipart `image` and `consent=true`. The photo is analysed in memory and never stored. Returns `palette` (not saved). |
+| GET | `/colors/palette` | Saved palette or `null`. |
+| PUT | `/colors/palette` | Save an AI or hand-edited palette. Invalid hex values are dropped. |
+| DELETE | `/colors/palette` | |
 
----
+Palette shape: `season`, `undertone`, `contrast`, `summary`, `lightingNote`, `recommendedColors[]`, `neutralColors[]`, `experimentColors[]`, `avoidColors[]` (each `{ name, hex, note }`), `combinations[]` (`{ name, usage, hexes[] }`) and `source` (`ai` | `custom`).
 
-## 7. Occasion Styling (`/api/styling`)
+## Shopping (`/api/shopping`)
 
-### Recommend by Occasion
-- **URL:** `/api/styling/recommend`
-- **Method:** `POST`
-- **Auth Required:** Yes
-- **Body:**
-  ```json
-  {
-    "occasion": "wedding-guest",
-    "formality": "semi-formal",
-    "dressCode": "Cocktail Attire",
-    "weather": "mild"
-  }
-  ```
+### `POST /shopping/assistant/search` — Smart Clothes Finder (**AI**)
 
----
+Body `{ query }`. Gemini extracts `filters` (`category, color, style, size, gender, occasion, brand, minPrice, maxPrice, otherRequirements[], searchQuery`). These are passed to the configured product provider.
 
-## 8. Smart Product Search (`/api/products`)
+```json
+{
+  "filters": { "…": "…" },
+  "configured": false,
+  "provider": null,
+  "products": [],
+  "marketplaceLinks": [{ "platform": "Myntra", "url": "…" }]
+}
+```
 
-### Search & Filter Products
-- **URL:** `/api/products`
-- **Method:** `GET`
-- **Auth Required:** No
-- **Query Parameters:**
-  - `q`: Search query text
-  - `category`: `tops`, `bottoms`, `shoes`, `outerwear`, etc.
-  - `minPrice`: Number
-  - `maxPrice`: Number
-  - `sort`: `price_asc`, `price_desc`, `rating`
-- **Response `200`:** List of catalog products with price, rating, brand, and affiliate/dev links.
+With `PRODUCT_SEARCH_API_KEY` set, `products` holds real Google Shopping results (via SerpApi): `{ id, title, price, priceText, merchant, imageUrl, link, rating, reviews, description }`. Without it, `products` is always empty; listings are never invented.
 
-### Save / Bookmark Product
-- **URL:** `/api/products/saved`
-- **Method:** `POST`
-- **Auth Required:** Yes
-- **Body:** `{ "productId": "..." }`
+### `POST /shopping/plan` — budget planner (**AI**)
 
----
+Body `{ budget (₹200–₹10,00,000), goal?, categories[]?, style?, priorities? }`. Gemini proposes a prioritised list based on what the user already owns. The server then drops the lowest-priority items until the total fits the budget. When a product provider is configured, each item gets up to 3 real listings within its unit budget. `hasLiveProducts: false` means the amounts are estimates, not real prices.
 
-## 9. Budget Shopping Assistant (`/api/shopping`)
+| Method | Path |
+| --- | --- |
+| GET | `/shopping/saved` |
+| DELETE | `/shopping/saved/:id` |
 
-### Generate AI Shopping Plan
-- **URL:** `/api/shopping/plan`
-- **Method:** `POST`
-- **Auth Required:** Yes
-- **Body:**
-  ```json
-  {
-    "budget": 200,
-    "wardrobeGaps": ["Lightweight summer blazer", "White leather sneakers"],
-    "targetOccasion": "Smart Casual Workwear"
-  }
-  ```
+## Saved products (`/api/products`)
 
-### Manage Shopping Lists
-- **URL:** `/api/shopping/lists`
-- **Methods:** `GET`, `POST`, `PUT`, `DELETE`
-- **Auth Required:** Yes
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/products/saved` | |
+| POST | `/products/saved` | Body `{ id, title, price, merchant, imageUrl, link }` from a finder result. Idempotent per `id`. |
+| DELETE | `/products/saved/:id` | |
 
----
+## Chat (`/api/chat`)
 
-## 10. Virtual Try-On (`/api/try-on`)
+| Method | Path | Notes |
+| --- | --- | --- |
+| POST | `/chat` | **AI.** Body `{ message (≤1000 chars), conversationId?, city? }`. Returns `{ conversationId, reply }`. Context sent to Gemini: the wardrobe, style preferences, colour palette, saved outfits, current weather and the last 20 messages. Messages are only stored once Gemini replies. |
+| GET | `/chat/conversations` | List without messages. |
+| GET | `/chat/conversations/:id` | |
+| DELETE | `/chat/conversations/:id` | |
+| DELETE | `/chat/conversations` | Clear all history. |
 
-### Submit Try-On Job
-- **URL:** `/api/try-on/submit`
-- **Method:** `POST`
-- **Auth Required:** Yes
-- **Content-Type:** `multipart/form-data`
-- **Fields:**
-  - `userPhoto`: Full-length person photo
-  - `clothingPhoto` or `clothingItemId`: Clothing garment to try on
-- **Response `200`:**
-  ```json
-  {
-    "success": true,
-    "jobId": "tryon-670d8a...",
-    "status": "completed",
-    "fitAnalysis": {
-      "overallFit": "Tailored Regular",
-      "silhouetteCompatibility": "High",
-      "recommendations": "Sleeve length matches shoulder breadth well."
-    }
-  }
-  ```
+## Virtual try-on (`/api/try-on`)
 
-### Get Job Status
-- **URL:** `/api/try-on/:id`
-- **Method:** `GET`
-- **Auth Required:** Yes
+`POST /try-on` takes multipart `userPhoto` and `garmentPhoto`. It stores the photos, creates a job and adds Gemini styling notes. Image rendering needs `VIRTUAL_TRYON_*` to be configured; until then jobs stay `awaiting_configuration`. `GET /try-on/:id` returns a job.
 
----
+## Weather (`/api/weather`)
 
-## 11. AI Fashion Chatbot (`/api/chat`)
-
-### Send Chat Message
-- **URL:** `/api/chat`
-- **Method:** `POST`
-- **Auth Required:** Yes
-- **Body:**
-  ```json
-  {
-    "message": "What should I wear for an outdoor brunch this Saturday?",
-    "includeWardrobeContext": true
-  }
-  ```
-- **Response `200`:** Assistant reply with contextual wardrobe references.
-
-### Clear Conversation History
-- **URL:** `/api/chat/history`
-- **Method:** `DELETE`
-- **Auth Required:** Yes
-
----
-
-## 12. Weather Service (`/api/weather`)
-
-### Get Current Weather
-- **URL:** `/api/weather/current`
-- **Method:** `GET`
-- **Auth Required:** No
-- **Query Parameters:**
-  - `latitude`: Float (e.g., `40.7128`)
-  - `longitude`: Float (e.g., `-74.0060`)
-- **Response `200`:** Current temperature, wind speed, condition code, and clothing tips.
+`GET /weather?city=…` or `?lat=…&lon=…`. Public. Live Open-Meteo data cached for 10 minutes. Returns `found: false` when unavailable; it never returns made-up weather.

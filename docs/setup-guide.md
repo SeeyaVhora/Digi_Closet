@@ -61,8 +61,14 @@ MONGODB_URI=mongodb://127.0.0.1:27017/digi_closet
 FIREBASE_PROJECT_ID=demo-digi-closet
 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
 
-# Google Gemini AI (Optional - operates in offline fallback if omitted)
+# Google Gemini AI (required for all AI features; no offline mode)
 GEMINI_API_KEY=
+GEMINI_MODEL=gemini-3.5-flash-lite
+GEMINI_FALLBACK_MODEL=gemini-3.1-flash-lite
+
+# Live product listings for Clothes Finder / Budget Planner (optional, SerpApi)
+PRODUCT_SEARCH_PROVIDER=serpapi
+PRODUCT_SEARCH_API_KEY=
 
 # File Storage (Leave blank for local filesystem storage in dev)
 FIREBASE_STORAGE_BUCKET=
@@ -79,12 +85,10 @@ npm run db:start
 
 *Note: If you already run MongoDB as a system service (`brew services start mongodb-community` or `systemctl start mongod`), you do not need `npm run db:start`.*
 
-#### D. Seed Dev Catalog
-
-Populate MongoDB with 24 curated fashion items across various categories:
+#### D. Start the Firebase Auth Emulator
 
 ```bash
-npm run seed
+firebase emulators:start --only auth --project demo-digi-closet
 ```
 
 #### E. Start Backend Dev Server
