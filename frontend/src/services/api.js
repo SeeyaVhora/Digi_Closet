@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 
 const API_BASE_URL = '/api';
@@ -22,15 +23,15 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor — handle 401 (expired/invalid token)
+// Response interceptor — handle 401 (expired/invalid token).
+// Sign out rather than hard-navigating to /login: a full reload keeps the stale
+// Firebase session, so /login bounces straight back to /dashboard, which 401s
+// again and reloads forever. Signing out lets ProtectedRoute redirect normally.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      const path = window.location.pathname;
-      if (path !== '/login' && path !== '/register' && path !== '/') {
-        window.location.href = '/login';
-      }
+    if (error.response?.status === 401 && auth.currentUser) {
+      signOut(auth).catch(() => {});
     }
     return Promise.reject(error);
   }
