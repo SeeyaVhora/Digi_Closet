@@ -68,18 +68,22 @@ const SavedOutfit = require('../models/SavedOutfit');
 const ShoppingList = require('../models/ShoppingList');
 const SavedProduct = require('../models/SavedProduct');
 const Conversation = require('../models/Conversation');
-const TryOnJob = require('../models/TryOnJob');
+const Look = require('../models/Look');
+const OutfitPlan = require('../models/OutfitPlan');
+const imageService = require('../services/imageService');
 
 // GET /api/profile/export — exports all user data (profile, wardrobe, outfits, shopping lists)
 const exportUserData = async (req, res, next) => {
   try {
     const userId = req.user._id;
 
-    const [wardrobe, outfits, shoppingLists, savedProducts] = await Promise.all([
+    const [wardrobe, outfits, shoppingLists, savedProducts, looks, outfitPlans] = await Promise.all([
       ClothingItem.find({ owner: userId }).lean(),
       SavedOutfit.find({ owner: userId }).lean(),
       ShoppingList.find({ owner: userId }).lean(),
       SavedProduct.find({ owner: userId }).lean(),
+      Look.find({ owner: userId }).lean(),
+      OutfitPlan.find({ owner: userId }).lean(),
     ]);
 
     const exportPayload = {
@@ -88,6 +92,7 @@ const exportUserData = async (req, res, next) => {
         id: req.user._id,
         name: req.user.name,
         email: req.user.email,
+        phoneNumber: req.user.phoneNumber,
         onboardingCompleted: req.user.onboardingCompleted,
         stylePreferences: req.user.stylePreferences,
         physicalProfile: req.user.physicalProfile,
@@ -110,6 +115,14 @@ const exportUserData = async (req, res, next) => {
         count: savedProducts.length,
         items: savedProducts,
       },
+      looks: {
+        count: looks.length,
+        items: looks,
+      },
+      outfitPlans: {
+        count: outfitPlans.length,
+        items: outfitPlans,
+      },
     };
 
     res.json({
@@ -127,13 +140,19 @@ const deleteAccount = async (req, res, next) => {
   try {
     const userId = req.user._id;
 
+    // Looks hold photos of the user, so remove the image files too.
+    const looks = await Look.find({ owner: userId }, 'sourceImagePath resultPath').lean();
+    const lookImages = new Set(looks.flatMap((look) => [look.sourceImagePath, look.resultPath]));
+    await Promise.all([...lookImages].map((p) => imageService.deleteImage(p).catch(() => {})));
+
     await Promise.all([
       ClothingItem.deleteMany({ owner: userId }),
       SavedOutfit.deleteMany({ owner: userId }),
       ShoppingList.deleteMany({ owner: userId }),
       SavedProduct.deleteMany({ owner: userId }),
       Conversation.deleteMany({ owner: userId }),
-      TryOnJob.deleteMany({ owner: userId }),
+      Look.deleteMany({ owner: userId }),
+      OutfitPlan.deleteMany({ owner: userId }),
       User.findByIdAndDelete(userId),
     ]);
 

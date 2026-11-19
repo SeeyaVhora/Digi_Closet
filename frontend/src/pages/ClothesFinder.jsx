@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search, ExternalLink, Bookmark, Check, Star, ImageIcon } from 'lucide-react';
 import api, { getErrorMessage } from '../services/api';
 import { useToast } from '../components/Toast';
@@ -102,6 +103,19 @@ export default function ClothesFinder() {
     }
   };
 
+  // Wardrobe Insights links here with ?q= to look for a missing essential.
+  const [searchParams] = useSearchParams();
+  const linkedQuery = searchParams.get('q');
+  const lastLinked = useRef(null);
+  useEffect(() => {
+    if (linkedQuery && linkedQuery !== lastLinked.current) {
+      lastLinked.current = linkedQuery;
+      search(linkedQuery);
+    }
+    // search only reads state setters and the query it is given.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedQuery]);
+
   const saveProduct = async (product) => {
     try {
       await api.post('/products/saved', {
@@ -120,8 +134,11 @@ export default function ClothesFinder() {
   return (
     <div className="animate-fade-in">
       <PageHeader
-        title="Clothes Finder"
+        eyebrow="Discover"
+        title="Find your next favourite piece."
         subtitle="Describe what you want in your own words, with colour, style, size or budget, and we'll search for it."
+        image="/images/editorial/white-shirts-rail.jpg"
+        variant="reverse"
       />
 
       <form className="sf-search" onSubmit={(e) => { e.preventDefault(); search(query); }}>

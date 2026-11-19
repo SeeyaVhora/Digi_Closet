@@ -2,7 +2,7 @@ const rateLimit = require('express-rate-limit');
 
 /**
  * Stricter rate limit for expensive AI-backed endpoints
- * (outfit recommendations, fashion critic, chatbot, color analysis, try-on).
+ * (outfit recommendations, fashion critic, chatbot, color analysis, try-on, style makeover).
  */
 const aiRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute

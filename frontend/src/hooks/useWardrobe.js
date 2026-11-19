@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
+function toRequestBody(itemData, imageFile) {
+  if (!imageFile) return itemData;
+  const formData = new FormData();
+  formData.append('image', imageFile);
+  formData.append('data', JSON.stringify(itemData));
+  return formData;
+}
+
 // `error` only reflects loading the list; mutations throw so callers can show
 // the failure next to the action that caused it.
 export default function useWardrobe({ autoFetch = true } = {}) {
@@ -21,14 +29,16 @@ export default function useWardrobe({ autoFetch = true } = {}) {
     }
   }, []);
 
-  const addItem = useCallback(async (itemData) => {
-    const { data } = await api.post('/wardrobe', itemData);
+  // With a photo, the file and the fields go up in one request so the server
+  // can store both together (and discard the photo if the save fails).
+  const addItem = useCallback(async (itemData, imageFile) => {
+    const { data } = await api.post('/wardrobe', toRequestBody(itemData, imageFile));
     setItems((prev) => [data.data.item, ...prev]);
     return data;
   }, []);
 
-  const updateItem = useCallback(async (id, itemData) => {
-    const { data } = await api.put(`/wardrobe/${id}`, itemData);
+  const updateItem = useCallback(async (id, itemData, imageFile) => {
+    const { data } = await api.put(`/wardrobe/${id}`, toRequestBody(itemData, imageFile));
     setItems((prev) => prev.map((i) => (i._id === id ? data.data.item : i)));
     return data;
   }, []);

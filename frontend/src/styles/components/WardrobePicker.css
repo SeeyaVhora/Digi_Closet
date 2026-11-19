@@ -1,0 +1,53 @@
+/* Shared by Fashion Critic and Virtual Try-On. */
+.fc-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: var(--space-3);
+  max-height: 22rem;
+  overflow-y: auto;
+  padding: 0.125rem;
+}
+.fc-picker__hint { font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: calc(var(--space-3) * -1); }
+.fc-picker__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+}
+.fc-picker__image {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-muted);
+  color: var(--text-muted);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.fc-picker__image img { width: 100%; height: 100%; object-fit: cover; }
+.fc-picker__item:hover .fc-picker__image { border-color: var(--border-strong); }
+.fc-picker__item--selected .fc-picker__image { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.fc-picker__check {
+  position: absolute;
+  top: var(--space-1-5);
+  right: var(--space-1-5);
+  display: flex;
+  padding: 0.1875rem;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: var(--text-inverse);
+}
+.fc-picker__name {
+  overflow: hidden;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

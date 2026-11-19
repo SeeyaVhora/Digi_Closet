@@ -516,33 +516,111 @@ ${JSON.stringify(wardrobeItems.map((i) => ({ name: i.name, category: i.category,
 }
 
 // ---------------------------------------------------------------------------
-// Virtual try-on: styling notes for a garment against the user's photo
+// Virtual try-on & Style Makeover
 // ---------------------------------------------------------------------------
 
-async function analyzeTryOnFit({ userPhoto, garmentPhoto }) {
+const STYLE_CATEGORIES = ['Casual', 'Smart Casual', 'Formal', 'Streetwear', 'Minimal', 'Classic', 'Sporty', 'Ethnic', 'Bohemian'];
+
+// Shared by both image prompts: what must not change about the person.
+const PRESERVE_PERSON = `Keep the same person: identical face and facial features, identity, hairstyle, skin tone, body shape and proportions, pose and expression.
+Keep the original background, camera angle, framing and lighting.
+The result must be a photorealistic photograph, not an illustration, render or collage.`;
+
+function tryOnPrompt(items) {
+  const garments = items
+    .map((item, index) => `Image ${index + 2}: ${item.name} (${[item.category, item.type, item.colors?.join('/'), item.pattern].filter(Boolean).join(', ')})`)
+    .join('\n');
+  return `Image 1 is a photo of a person. The other images are clothing items from their wardrobe:
+${garments}
+
+Edit image 1 so the person is wearing all of these items, each replacing whatever they currently wear in the same place on the body. Keep any clothing that is not being replaced.
+Reproduce every item faithfully: exact colours, pattern, print, texture, logos and cut.
+Make the fit realistic for this body: natural drape, folds and creases, with shadows and highlights that match the photo's lighting.
+${PRESERVE_PERSON}
+Do not add clothing or accessories that were not provided.`;
+}
+
+function makeoverPrompt(style) {
+  const list = (label, values) => (values.length ? `${label}:\n${values.map((v) => `- ${v}`).join('\n')}\n` : '');
+  return `This is a photo of a person. Restyle their outfit into the "${style.name}" look${style.styleCategory ? ` (${style.styleCategory})` : ''}.
+${style.summary}
+
+${list('Clothing changes', style.clothingChanges)}${list('Accessories to add', style.accessories)}${list('Footwear', style.footwear)}
+Accessories must look naturally worn and correctly sized, sitting on the body with proper perspective, contact shadows and reflections, never pasted on.
+${PRESERVE_PERSON}
+Change only the clothing, accessories and footwear described above.`;
+}
+
+async function analyzeMakeover({ photo, user, wardrobeItems = [] }) {
+  const wardrobe = wardrobeItems.length
+    ? wardrobeItems.slice(0, 60).map((i) => `- ${i.name} (${[i.category, i.colors?.join('/')].filter(Boolean).join(', ')})`).join('\n')
+    : '';
+  const option = {
+    type: 'object',
+    properties: {
+      name: { type: 'string', description: 'Short, evocative name for the look, max 5 words' },
+      styleCategory: { type: 'string', enum: STYLE_CATEGORIES },
+      summary: { type: 'string', description: '1-2 sentences on the idea behind the look and why it suits this outfit' },
+      clothingChanges: stringArray('2-4 concrete clothing changes: colours, alternative pieces, fit, layering'),
+      accessories: stringArray('2-4 specific accessories, e.g. "thin brown leather belt", "silver minimalist watch"'),
+      footwear: stringArray('1-2 specific footwear choices'),
+    },
+    required: ['name', 'styleCategory', 'summary', 'clothingChanges', 'accessories', 'footwear'],
+  };
+
   const result = await gemini.generateJSON({
     systemInstruction: STYLIST_RULES,
-    temperature: 0.5,
-    images: [
-      GeminiService.imagePart(userPhoto.buffer, userPhoto.mimeType),
-      GeminiService.imagePart(garmentPhoto.buffer, garmentPhoto.mimeType),
-    ],
-    prompt: `Image 1 shows the user, image 2 shows a garment they are considering.
-Give styling advice about the garment: how well its colour works with the colours the user is already wearing and their visible colouring, how to wear it, and what to pair it with.
-Do not comment on the person's body.`,
+    temperature: 0.8,
+    images: [GeminiService.imagePart(photo.buffer, photo.mimeType)],
+    prompt: `The photo shows the user in their current outfit. Act as their personal stylist.
+First, assess the outfit: what works and what would elevate it (colour coordination, balance, fit, accessories, footwear).
+Then propose exactly 3 distinct makeover options that build on what they are wearing, each in a different style direction (for example casual, smart casual, formal or streetwear).
+Each option must be specific enough for a photo editor to apply: name exact garments, colours and accessories.
+${describePreferences(user)}
+${wardrobe ? `Pieces they already own (mention one by name when it fits an option):\n${wardrobe}` : ''}`,
     schema: {
       type: 'object',
       properties: {
-        fitScore: { type: 'integer', description: '1-100 overall styling match' },
-        silhouetteVerdict: { type: 'string', description: "1-2 sentences on the garment's cut and how to style it" },
-        colorHarmony: { type: 'string' },
-        stylingTips: stringArray('3 tips'),
-        recommendedPairings: stringArray('3 pairings'),
+        assessment: {
+          type: 'object',
+          properties: {
+            summary: { type: 'string', description: '1-2 sentences describing the current outfit' },
+            strengths: stringArray('2-3 things that already work'),
+            improvements: stringArray('2-4 specific improvements'),
+          },
+          required: ['summary', 'strengths', 'improvements'],
+        },
+        options: { type: 'array', items: option, minItems: 3, maxItems: 3 },
       },
-      required: ['fitScore', 'silhouetteVerdict', 'colorHarmony', 'stylingTips', 'recommendedPairings'],
+      required: ['assessment', 'options'],
     },
   });
-  return { ...result, fitScore: Math.max(1, Math.min(100, result.fitScore)), mode: 'ai' };
+
+  if (!Array.isArray(result.options) || result.options.length < 3) {
+    throw new AIError('Gemini did not return three style options. Please try again.', 502);
+  }
+  return { assessment: result.assessment, options: result.options.slice(0, 3).map(sanitizeStyleOption) };
+}
+
+/**
+ * Normalises a makeover option. Options round-trip through the client before
+ * a look is generated, so this also bounds whatever it sends back.
+ * Returns null if the option is unusable.
+ */
+function sanitizeStyleOption(option) {
+  if (!option || typeof option !== 'object') return null;
+  const text = (value, max) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
+  const list = (value) => (Array.isArray(value) ? value.map((v) => text(v, 200)).filter(Boolean).slice(0, 6) : []);
+  const name = text(option.name, 80);
+  if (!name) return null;
+  return {
+    name,
+    styleCategory: STYLE_CATEGORIES.includes(option.styleCategory) ? option.styleCategory : null,
+    summary: text(option.summary, 500),
+    clothingChanges: list(option.clothingChanges),
+    accessories: list(option.accessories),
+    footwear: list(option.footwear),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -589,7 +667,10 @@ module.exports = {
   analyzeColorPalette,
   parseShoppingQuery,
   planBudget,
-  analyzeTryOnFit,
+  analyzeMakeover,
+  sanitizeStyleOption,
+  tryOnPrompt,
+  makeoverPrompt,
   chat,
   buildOutfit,
 };

@@ -157,9 +157,31 @@ Body `{ budget (₹200–₹10,00,000), goal?, categories[]?, style?, priorities
 | DELETE | `/chat/conversations/:id` | |
 | DELETE | `/chat/conversations` | Clear all history. |
 
-## Virtual try-on (`/api/try-on`)
+## Looks: Virtual Try-On & Style Makeover (`/api/looks`)
 
-`POST /try-on` takes multipart `userPhoto` and `garmentPhoto`. It stores the photos, creates a job and adds Gemini styling notes. Image rendering needs `VIRTUAL_TRYON_*` to be configured; until then jobs stay `awaiting_configuration`. `GET /try-on/:id` returns a job.
+Generated photos of the user. Image generation uses Gemini image models (`GEMINI_IMAGE_MODEL`), which need billing enabled on the API key; on the free tier these calls return 503 with an explanation. Photos are JPEG/PNG/WebP up to 5MB.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/looks?feature=try-on\|makeover&favorite=true` | The caller's saved looks, newest first. Unsaved looks older than 7 days are deleted. |
+| POST | `/looks/try-on` | Multipart `photo` + `data` (JSON `{ itemIds }`, 1–5 owned wardrobe items with photos). Or JSON `{ itemIds, sourceLookId }` to reuse the photo of an earlier look. Returns the new look (unsaved). |
+| POST | `/looks/makeover/analyze` | Multipart `photo`. Returns `{ assessment, options }` with 3 style options. Nothing is stored. |
+| POST | `/looks/makeover` | Multipart `photo` + `data` (JSON `{ style }`, one of the options), or JSON `{ style, sourceLookId }`. Returns the new look. |
+| PATCH | `/looks/:id` | `{ saved?, favorite? }`. Favouriting also saves; unsaving clears favourite. |
+| DELETE | `/looks/:id` | Deletes the look and its generated image (and the source photo once no other look uses it). |
+
+## Outfit planner (`/api/planner`)
+
+One saved outfit per day. Dates are the user's local `YYYY-MM-DD`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/planner?from=…&to=…` | Plans in the range (at most 62 days), each with its outfit populated. |
+| PUT | `/planner/:date` | `{ outfitId, occasion? }`. Creates or replaces the day's plan. Blocked while the day is marked worn. |
+| DELETE | `/planner/:date` | Clears the day. Wear already recorded is kept. |
+| PUT | `/planner/:date/worn` | `{ worn }`. Marking worn adds one to `wearCount` (and sets `lastWornAt`) on every item in the outfit; unmarking takes it back. Only up to today. |
+
+Deleting a saved outfit also deletes its plans.
 
 ## Weather (`/api/weather`)
 

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Wordmark from '../components/Wordmark';
 import {
-  Sparkles, ArrowRight, ArrowLeft, Check, Palette,
+  ArrowRight, ArrowLeft, Check, Palette,
   Shirt, Calendar, Ruler, Wallet, CheckCircle2
 } from 'lucide-react';
 import useProfile from '../hooks/useProfile';
@@ -108,18 +109,16 @@ export default function Onboarding() {
   const handleSkip = () => navigate('/dashboard');
 
   return (
-    <div className="centered-page" style={{ padding: 'var(--space-6) var(--space-4)' }}>
-      <div style={{ width: '100%', maxWidth: '42rem' }}>
-        {/* Header */}
-        <div className="auth-card__header" style={{ textAlign: 'center', marginBottom: 'var(--space-6)' }}>
-          <div className="auth-card__logo" style={{ margin: '0 auto var(--space-3)' }}>
-            <Sparkles size={24} />
-          </div>
-          <h1 className="auth-card__title">Curate Your Style Profile</h1>
-          <p className="auth-card__subtitle">
-            Tailor Digi Closet&apos;s AI to your silhouette, favorite palettes, and budget.
+    <div className="onboarding">
+      <Wordmark to="/dashboard" />
+      <div className="onboarding__inner">
+        <header className="onboarding__header">
+          <span className="eyebrow">Your style profile</span>
+          <h1 className="onboarding__title">Tell us about your style.</h1>
+          <p className="onboarding__subtitle">
+            Your colours, fit and budget tune every suggestion DigiCloset makes.
           </p>
-        </div>
+        </header>
 
         {/* Wizard Progress Bar */}
         <div className="wizard-progress">

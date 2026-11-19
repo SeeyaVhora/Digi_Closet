@@ -12,9 +12,9 @@ import ConfirmDialog from '../components/ConfirmDialog';
 
 const SUGGESTED_QUESTIONS = [
   'What should I wear today?',
-  'Suggest an outfit for college',
+  'Suggest an outfit for a date.',
   'How can I style my black jeans?',
-  'Which colours go with a white shirt?',
+  'Which accessories match my outfit?',
   'What should I buy next?',
   'Suggest an outfit within ₹2,000',
   'What is missing from my wardrobe?',
@@ -59,7 +59,8 @@ export default function Chatbot() {
   return (
     <div className="animate-fade-in">
       <PageHeader
-        title="Stylist Chat"
+        eyebrow="AI Studio"
+        title="Your personal style conversation."
         subtitle={subtitle}
         action={
           <div style={{ display: 'flex', gap: 'var(--space-2)' }}>

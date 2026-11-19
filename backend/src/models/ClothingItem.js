@@ -37,6 +37,9 @@ const clothingItemSchema = new mongoose.Schema(
     fit: { type: String, default: null },
     brand: { type: String, default: null },
     notes: { type: String, default: '', maxlength: 500 },
+    // Updated when the user marks a planned day as worn (Outfit Planner).
+    wearCount: { type: Number, default: 0, min: 0 },
+    lastWornAt: { type: Date, default: null },
     aiSuggested: {
       category: { type: String, default: null },
       colors: { type: [String], default: [] },

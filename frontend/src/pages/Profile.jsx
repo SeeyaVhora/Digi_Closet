@@ -40,7 +40,8 @@ function ProfileForm({ authUser, form, setForm, toggleArrayItem, handleSubmit, f
         <h2 className="section__title">Basic Information</h2>
         <div className="form-grid">
           <Input label="Name" value={authUser?.name || ''} disabled />
-          <Input label="Email" value={authUser?.email || ''} disabled />
+          {authUser?.email && <Input label="Email" value={authUser.email} disabled />}
+          {authUser?.phoneNumber && <Input label="Mobile number" value={authUser.phoneNumber} disabled />}
         </div>
       </Card>
 
@@ -176,7 +177,7 @@ export default function Profile() {
 
   return (
     <div className="animate-fade-in" style={{ maxWidth: '40rem' }}>
-      <PageHeader title="My Profile" subtitle="Manage your fashion preferences and personal information." />
+      <PageHeader eyebrow="Account" title="Your profile." subtitle="Your style preferences shape every suggestion DigiCloset makes." />
       <ProfileForm
         authUser={authUser} form={form} setForm={setForm} toggleArrayItem={toggleArrayItem}
         handleSubmit={handleSubmit} formError={formError} success={success} saving={saving}

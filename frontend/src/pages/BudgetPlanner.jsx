@@ -64,8 +64,11 @@ export default function BudgetPlanner() {
   return (
     <div className="animate-fade-in">
       <PageHeader
-        title="Budget Planner"
+        eyebrow="Discover"
+        title="Shop with a plan."
         subtitle="Tell us your budget and what you need. We'll look at what you already own and suggest what's worth buying."
+        image="/images/editorial/white-tee-hanger.jpg"
+        variant="reverse"
       />
 
       <div className="bp-layout">

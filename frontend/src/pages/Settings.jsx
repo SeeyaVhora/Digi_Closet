@@ -126,7 +126,8 @@ export default function Settings() {
   return (
     <div className="animate-fade-in" style={{ maxWidth: '42rem' }}>
       <PageHeader
-        title="Settings & Privacy"
+        eyebrow="Account"
+        title="Settings & privacy."
         subtitle="Control how your data is used, export it, or delete your account."
       />
 
@@ -192,12 +193,15 @@ export default function Settings() {
           Account Security
         </h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xs)', marginBottom: 'var(--space-2)' }}>
-          Signed in as <strong>{user?.email}</strong>
+          Signed in as <strong>{user?.email || user?.phoneNumber}</strong>
         </p>
         <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)', flexWrap: 'wrap' }}>
-          <Button variant="outline" onClick={handlePasswordReset} loading={resettingPw}>
-            <KeyRound size={16} /> Send Password Reset Email
-          </Button>
+          {/* Phone-only accounts sign in with an SMS code and have no password. */}
+          {user?.email && (
+            <Button variant="outline" onClick={handlePasswordReset} loading={resettingPw}>
+              <KeyRound size={16} /> Send Password Reset Email
+            </Button>
+          )}
           <Button variant="ghost" onClick={() => setShowLogoutConfirm(true)}>
             <LogOut size={16} /> Sign Out
           </Button>

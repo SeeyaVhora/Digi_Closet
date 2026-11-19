@@ -23,8 +23,10 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
+export const AUTH_EMULATOR_URL = 'http://127.0.0.1:9099';
+
 if (USE_AUTH_EMULATOR) {
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectAuthEmulator(auth, AUTH_EMULATOR_URL, { disableWarnings: true });
 }
 
 export default app;

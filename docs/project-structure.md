@@ -61,13 +61,17 @@ frontend/
 │   │   ├── Input.jsx               # Form input with validation state and label
 │   │   ├── LoadingSpinner.jsx      # Animated SVG loading spinner with size variants
 │   │   ├── Modal.jsx               # Accessible dialog overlay with backdrop blur
-│   │   ├── Navbar.jsx              # Top header with user profile menu & quick links
+│   │   ├── Wordmark.jsx            # DIGICLOSET wordmark
+│   │   ├── AuthShell.jsx           # Split photo + form layout for sign in / register
 │   │   ├── OutfitCard.jsx          # Outfit recommendation card with item breakdown
 │   │   ├── PageHeader.jsx          # Standardized page title, description, and action slot
 │   │   ├── Select.jsx              # Dropdown select control
 │   │   ├── Sidebar.jsx             # Collapsible side navigation with route badges
 │   │   ├── Toast.jsx               # Notification toast system (success, error, info)
-│   │   └── UploadDropzone.jsx      # Drag-and-drop file upload with live preview
+│   │   ├── UploadDropzone.jsx      # Drag-and-drop file upload with live preview
+│   │   ├── WardrobePicker.jsx      # Selectable grid of wardrobe items (critic, try-on)
+│   │   ├── LookResult.jsx          # Generated look with regenerate/save/favourite/download
+│   │   └── LookGallery.jsx         # Saved looks grid with favourites filter
 │   ├── context/
 │   │   └── AuthContext.jsx         # Authentication state provider & session sync
 │   ├── hooks/                      # Custom React hooks encapsulating data & API logic
@@ -75,12 +79,14 @@ frontend/
 │   │   ├── useOutfits.js           # Outfit recommendation fetch & save actions
 │   │   ├── useProfile.js           # User profile management, export, and account deletion
 │   │   ├── useShoppingList.js      # Budget shopping planner and list CRUD
-│   │   ├── useTryOn.js             # Photo upload, job polling, and fit analysis
+│   │   ├── useLooks.js             # Try-on / makeover generation and saved looks
+│   │   ├── usePlanner.js           # Outfit plans for a date range
+│   │   ├── useReveal.js            # Scroll-reveal for editorial sections
 │   │   ├── useWardrobe.js          # Wardrobe item CRUD, category filters, upload
 │   │   └── useWeather.js           # Geolocation-based weather and forecast fetching
 │   ├── layout/
 │   │   ├── AuthLayout.jsx          # Centered card layout for Login and Registration
-│   │   └── MainLayout.jsx          # App shell combining Sidebar, Navbar, and content outlet
+│   │   └── MainLayout.jsx          # Studio shell: sidebar, top bar (wardrobe search, profile), content
 │   ├── pages/                      # Application route pages
 │   │   ├── Chatbot.jsx             # AI fashion styling conversational assistant
 │   │   ├── ColorAnalyzer.jsx       # Palette compatibility and color wheel suggestions
@@ -97,7 +103,10 @@ frontend/
 │   │   ├── SavedItems.jsx          # Bookmarked outfits, products, and shopping lists
 │   │   ├── Settings.jsx            # Account settings, themes, data export, danger zone
 │   │   ├── BudgetPlanner.jsx       # AI budget allocation that never exceeds the budget
-│   │   └── TryOn.jsx               # Virtual try-on upload with Gemini fit analysis
+│   │   ├── StyleMakeover.jsx       # Outfit analysis, 3 style options, generated makeovers
+│   │   ├── OutfitPlanner.jsx       # Weekly planner with mark-as-worn
+│   │   ├── WardrobeInsights.jsx    # Wear, colour and category stats; gap analysis
+│   │   └── TryOn.jsx               # Virtual try-on: your photo + wardrobe items → generated look
 │   ├── routes/
 │   │   ├── AppRoutes.jsx           # Top-level route switchboard using React Router
 │   │   └── ProtectedRoute.jsx      # Route guard requiring authenticated Firebase user
@@ -140,7 +149,8 @@ backend/
 │   │   ├── productController.js    # Catalog search, filtering, and favorites management
 │   │   ├── profileController.js    # User profile updates, GDPR data export, account deletion
 │   │   ├── shoppingController.js   # Budget breakdown and shopping lists management
-│   │   ├── tryOnController.js      # Virtual try-on job submission, polling, fit analysis
+│   │   ├── lookController.js       # Virtual try-on & style makeover generation, saved looks
+│   │   ├── plannerController.js    # Outfit planner days and wear tracking
 │   │   ├── wardrobeController.js   # Clothing items CRUD with image upload & categorization
 │   │   └── weatherController.js    # Open-Meteo weather forecast proxy and outfit hints
 │   ├── middleware/
@@ -155,7 +165,8 @@ backend/
 │   │   ├── SavedOutfit.js          # Assembled outfit with composed wardrobe items
 │   │   ├── SavedProduct.js         # Snapshot + link of a product bookmarked from live search
 │   │   ├── ShoppingList.js         # Custom shopping list with budget tracking
-│   │   ├── TryOnJob.js             # Try-on request record with fit analysis & status
+│   │   ├── Look.js                 # Generated try-on / makeover photo, saved & favourite flags
+│   │   ├── OutfitPlan.js           # A saved outfit assigned to a day, worn flag
 │   │   └── User.js                 # Core user record with style profile & measurements
 │   ├── routes/                     # Express router definitions mounted at `/api/*`
 │   │   ├── authRoutes.js           # POST /api/auth/sync, GET /api/auth/me
@@ -166,7 +177,8 @@ backend/
 │   │   ├── productRoutes.js        # GET /api/products, POST /api/products/saved
 │   │   ├── profileRoutes.js        # GET/PUT /api/profile, POST /export, DELETE /account
 │   │   ├── shoppingRoutes.js       # POST /api/shopping/plan, CRUD /api/shopping/lists
-│   │   ├── tryOnRoutes.js          # POST /api/try-on/submit, GET /api/try-on/:id
+│   │   ├── lookRoutes.js           # /api/looks (try-on, makeover, saved looks)
+│   │   ├── plannerRoutes.js        # /api/planner
 │   │   ├── wardrobeRoutes.js       # CRUD /api/wardrobe with image upload
 │   │   ├── weatherRoutes.js        # GET /api/weather/current
 │   │   └── index.js                # Master router mounting all sub-routes
@@ -175,7 +187,7 @@ backend/
 │   │   ├── stylistService.js       # AI features: prompts, JSON schemas, output validation
 │   │   ├── imageService.js         # Local disk storage & Firebase Cloud Storage adapter
 │   │   ├── productSearchService.js # Pluggable live product search (SerpApi Google Shopping)
-│   │   ├── tryOnService.js         # Try-on queue processor and fit analysis integration
+│   │   ├── imageGenerationService.js # Swappable image generation provider (Gemini today)
 │   │   └── weatherService.js       # Open-Meteo REST API wrapper
 │   └── index.js                    # Express application entry point
 ├── uploads/                        # Local file uploads directory (gitignored)

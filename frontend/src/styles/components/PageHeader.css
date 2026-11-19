@@ -1,26 +1,63 @@
 .page-header {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  margin-bottom: var(--space-8);
+  gap: var(--space-5);
+  margin-bottom: var(--space-10);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--border-default);
 }
+.page-header__text { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
 .page-header__title {
-  font-size: var(--text-3xl);
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
+  font-size: var(--text-display);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 .page-header__subtitle {
+  max-width: 34rem;
   color: var(--text-secondary);
-  margin-top: var(--space-1);
   font-size: var(--text-sm);
+  line-height: 1.7;
 }
-.page-header__action { flex-shrink: 0; }
+.page-header__action { margin-top: var(--space-2); }
 
-@media (min-width: 640px) {
-  .page-header {
+/* --- Banner variants (with a photograph) --- */
+.page-header--banner { display: grid; gap: 0; padding: 0; border: none; background: var(--beige); }
+.page-header--banner .page-header__text { justify-content: center; padding: var(--space-8) var(--space-6); }
+.page-header__image { position: relative; height: 13rem; }
+.page-header__image img { position: absolute; inset: 0; }
+
+/* Overlay: the title sits on the photograph. */
+.page-header--overlay { position: relative; min-height: 20rem; background: var(--brown-dark); }
+.page-header--overlay .page-header__image { position: absolute; inset: 0; height: auto; }
+.page-header--overlay .page-header__image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to right, rgba(var(--ink-rgb), 0.72), rgba(var(--ink-rgb), 0.15) 70%); }
+.page-header--overlay .page-header__text { position: relative; z-index: 1; justify-content: flex-end; }
+.page-header--overlay .page-header__title,
+.page-header--overlay .page-header__subtitle { color: var(--ivory); }
+.page-header--overlay .eyebrow { color: var(--taupe); }
+
+/* Stacked: oversized title over a wide, low photo strip. */
+.page-header--stacked { background: none; gap: var(--space-6); }
+.page-header--stacked .page-header__text { padding: 0; }
+.page-header--stacked .page-header__title { font-size: clamp(2.75rem, 7vw, 6rem); line-height: 0.92; }
+.page-header--stacked .page-header__image { height: 12rem; }
+
+@media (min-width: 768px) {
+  .page-header:not(.page-header--banner) {
     flex-direction: row;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
   }
+  .page-header:not(.page-header--banner) .page-header__text { flex: 1; }
+  .page-header--split { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); min-height: 18rem; }
+  .page-header--reverse { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); min-height: 18rem; }
+  .page-header--reverse .page-header__image { order: -1; }
+  .page-header--split .page-header__text,
+  .page-header--reverse .page-header__text { padding: var(--space-10); }
+  .page-header--split .page-header__image,
+  .page-header--reverse .page-header__image { height: auto; min-height: 100%; }
+  .page-header--overlay { min-height: 24rem; }
+  .page-header--overlay .page-header__text { padding: var(--space-12); max-width: 44rem; }
+  .page-header--stacked .page-header__image { height: 16rem; }
 }

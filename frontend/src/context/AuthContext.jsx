@@ -4,6 +4,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithPhoneNumber,
   signOut,
   updateProfile as updateFirebaseProfile,
 } from 'firebase/auth';
@@ -24,51 +25,92 @@ export const AuthProvider = ({ children }) => {
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [user, setUser] = useState(null); // Mongo profile
   const [loading, setLoading] = useState(true);
+  const [authInProgress, setAuthInProgress] = useState(false);
 
   const isAuthenticated = !!firebaseUser;
 
+  // Throws, so login/register can show the error instead of landing on a
+  // dashboard whose every request fails.
   const syncMongoProfile = useCallback(async (name) => {
-    try {
-      const { data } = await api.post('/auth/sync', name ? { name } : {});
-      setUser(data.data.user);
-    } catch (err) {
-      console.error('Failed to sync profile:', err);
-    }
+    const { data } = await api.post('/auth/sync', name ? { name } : {});
+    setUser(data.data.user);
+    return data.data.user;
   }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
       if (fbUser) {
-        await syncMongoProfile();
+        await syncMongoProfile().catch((err) => console.error('Failed to sync profile:', err));
       } else {
         setUser(null);
+        setAuthInProgress(false);
       }
       setLoading(false);
     });
     return unsubscribe;
   }, [syncMongoProfile]);
 
-  const login = useCallback(async (email, password) => {
-    const credential = await signInWithEmailAndPassword(auth, email, password);
-    await syncMongoProfile();
-    return credential;
-  }, [syncMongoProfile]);
-
-  const register = useCallback(async (name, email, password) => {
-    const credential = await createUserWithEmailAndPassword(auth, email, password);
-    if (name) {
-      await updateFirebaseProfile(credential.user, { displayName: name });
+  // Runs a Firebase sign-in, then creates/loads the Mongo profile. If the
+  // backend rejects the account, sign back out so the app never sits in a
+  // half-signed-in state. `authInProgress` stops RedirectIfAuth from leaving
+  // the form before this finishes, so its error can still be shown; on
+  // success it stays set and the form navigates (e.g. to onboarding) itself.
+  const signInAndSync = useCallback(async (signIn, getName) => {
+    setAuthInProgress(true);
+    try {
+      const credential = await signIn();
+      try {
+        await syncMongoProfile(getName?.(credential));
+      } catch (err) {
+        await signOut(auth).catch(() => {});
+        throw err;
+      }
+      return credential;
+    } catch (err) {
+      setAuthInProgress(false);
+      throw err;
     }
-    await syncMongoProfile(name);
-    return credential;
   }, [syncMongoProfile]);
 
-  const loginWithGoogle = useCallback(async () => {
-    const credential = await signInWithPopup(auth, googleProvider);
-    await syncMongoProfile(credential.user.displayName);
-    return credential;
-  }, [syncMongoProfile]);
+  const login = useCallback(
+    (email, password) => signInAndSync(() => signInWithEmailAndPassword(auth, email, password)),
+    [signInAndSync]
+  );
+
+  const register = useCallback(
+    (name, email, password) => signInAndSync(async () => {
+      const credential = await createUserWithEmailAndPassword(auth, email, password);
+      if (name) {
+        await updateFirebaseProfile(credential.user, { displayName: name });
+      }
+      return credential;
+    }, () => name),
+    [signInAndSync]
+  );
+
+  const loginWithGoogle = useCallback(
+    () => signInAndSync(() => signInWithPopup(auth, googleProvider), (credential) => credential.user.displayName),
+    [signInAndSync]
+  );
+
+  // Phone sign-in is two steps: send an SMS code (returns a confirmation),
+  // then confirm the code. Confirming creates the account if it's new.
+  const sendPhoneCode = useCallback(
+    (phoneNumber, recaptchaVerifier) => signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier),
+    []
+  );
+
+  const confirmPhoneCode = useCallback(
+    (confirmation, code, name) => signInAndSync(async () => {
+      const credential = await confirmation.confirm(code);
+      if (name && !credential.user.displayName) {
+        await updateFirebaseProfile(credential.user, { displayName: name });
+      }
+      return credential;
+    }, () => name),
+    [signInAndSync]
+  );
 
   const logout = useCallback(async () => {
     await signOut(auth);
@@ -80,9 +122,12 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     isAuthenticated,
+    authInProgress,
     login,
     register,
     loginWithGoogle,
+    sendPhoneCode,
+    confirmPhoneCode,
     logout,
     refreshProfile: syncMongoProfile,
   };

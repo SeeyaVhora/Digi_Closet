@@ -94,13 +94,41 @@ const uploadImage = async (req, res, next) => {
   }
 };
 
-// POST /api/wardrobe
+// Stores the photo sent along with a create/update request.
+function storeWardrobeImage(req) {
+  return imageService.storeImage(req.file.buffer, {
+    uid: req.firebaseUser.uid,
+    folder: 'wardrobe',
+    mimetype: req.file.mimetype,
+  });
+}
+
+// Deletes a stored image without failing the request; a leftover file is
+// harmless, a failed response after a successful database write is not.
+function discardImage(storedPath) {
+  if (!storedPath) return;
+  imageService.deleteImage(storedPath).catch((err) => console.warn('Image cleanup failed:', err.message));
+}
+
+// POST /api/wardrobe — JSON, or multipart with an `image` file and the item
+// fields as JSON in `data`, so the photo and the record are saved together.
 const addItem = async (req, res, next) => {
+  let stored = null;
   try {
     const {
       name, description, category, type, imageUrl, imagePath, colors, pattern,
       season, style, occasions, size, fit, brand, notes, aiSuggested,
     } = req.body;
+
+    let image = { url: null, path: null };
+    if (req.file) {
+      stored = await storeWardrobeImage(req);
+      image = stored;
+    } else {
+      // Image uploaded earlier via /upload-image; only accept the caller's own files.
+      const ownedPath = ownedImagePath(req.firebaseUser.uid, imagePath, imageUrl);
+      if (ownedPath) image = { url: imageUrl, path: ownedPath };
+    }
 
     const item = await ClothingItem.create({
       owner: req.user._id,
@@ -108,8 +136,8 @@ const addItem = async (req, res, next) => {
       description: description || '',
       category,
       type: type || null,
-      imageUrl: imageUrl || null,
-      imagePath: ownedImagePath(req.firebaseUser.uid, imagePath, imageUrl),
+      imageUrl: image.url,
+      imagePath: image.path,
       colors: colors || [],
       pattern: pattern || null,
       season: season || [],
@@ -128,12 +156,15 @@ const addItem = async (req, res, next) => {
       data: { item },
     });
   } catch (error) {
+    discardImage(stored?.path);
     next(error);
   }
 };
 
-// PUT /api/wardrobe/:id
+// PUT /api/wardrobe/:id — accepts the same JSON or multipart body as POST.
+// Send `imageUrl: null` to remove the photo.
 const updateItem = async (req, res, next) => {
+  let stored = null;
   try {
     const item = await ClothingItem.findById(req.params.id);
     if (!item) {
@@ -144,7 +175,7 @@ const updateItem = async (req, res, next) => {
     }
 
     const updatable = [
-      'name', 'description', 'category', 'type', 'imageUrl', 'colors', 'pattern',
+      'name', 'description', 'category', 'type', 'colors', 'pattern',
       'season', 'style', 'occasions', 'size', 'fit', 'brand', 'notes',
     ];
     for (const field of updatable) {
@@ -152,11 +183,27 @@ const updateItem = async (req, res, next) => {
         item[field] = req.body[field];
       }
     }
-    if (req.body.imageUrl !== undefined) {
-      item.imagePath = ownedImagePath(req.firebaseUser.uid, req.body.imagePath, req.body.imageUrl);
+
+    const previousPath = item.imagePath;
+    const { imageUrl, imagePath } = req.body;
+    if (req.file) {
+      stored = await storeWardrobeImage(req);
+      item.imageUrl = stored.url;
+      item.imagePath = stored.path;
+    } else if (imageUrl === null || imageUrl === '') {
+      item.imageUrl = null;
+      item.imagePath = null;
+    } else if (imageUrl !== undefined && imageUrl !== item.imageUrl) {
+      const ownedPath = ownedImagePath(req.firebaseUser.uid, imagePath, imageUrl);
+      if (!ownedPath) {
+        return res.status(400).json({ success: false, message: 'Invalid image reference.' });
+      }
+      item.imageUrl = imageUrl;
+      item.imagePath = ownedPath;
     }
 
     await item.save();
+    if (previousPath && previousPath !== item.imagePath) discardImage(previousPath);
 
     res.json({
       success: true,
@@ -164,6 +211,7 @@ const updateItem = async (req, res, next) => {
       data: { item },
     });
   } catch (error) {
+    discardImage(stored?.path);
     next(error);
   }
 };
@@ -181,12 +229,10 @@ const deleteItem = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'You do not have permission to delete this item.' });
     }
 
-    const storedPath = ownedImagePath(req.firebaseUser.uid, item.imagePath, item.imageUrl);
-    if (storedPath) {
-      imageService.deleteImage(storedPath).catch((err) => console.warn('Image cleanup failed:', err.message));
-    }
-
     await item.deleteOne();
+    // imagePath is only ever written by the server after an ownership check,
+    // so it is safe to delete even if the owner's Firebase UID has since changed.
+    discardImage(item.imagePath || ownedImagePath(req.firebaseUser.uid, null, item.imageUrl));
 
     res.json({
       success: true,

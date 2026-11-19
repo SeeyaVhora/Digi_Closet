@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, ShoppingBag, ListChecks, ExternalLink, ImageIcon } from 'lucide-react';
+import { Heart, ShoppingBag, ListChecks, ExternalLink, ImageIcon, Camera } from 'lucide-react';
 import api, { getErrorMessage } from '../services/api';
 import useOutfits from '../hooks/useOutfits';
 import useShoppingList from '../hooks/useShoppingList';
+import useLooks from '../hooks/useLooks';
+import LookGallery from '../components/LookGallery';
+import '../styles/looks.css';
 import { useToast } from '../components/Toast';
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
@@ -40,6 +43,8 @@ export default function SavedItems() {
   const { saved: outfits, loading: outfitsLoading, toggleFavorite, deleteOutfit } = useOutfits();
   const { lists, loading: listsLoading, deleteList } = useShoppingList();
   const { products, loading: productsLoading, remove: removeProduct } = useSavedProducts();
+  // Generated try-on and makeover images the user chose to keep.
+  const looks = useLooks();
   const [tab, setTab] = useState('outfits');
   const [favouritesOnly, setFavouritesOnly] = useState(false);
 
@@ -55,13 +60,14 @@ export default function SavedItems() {
   const visibleOutfits = favouritesOnly ? outfits.filter((o) => o.favorite) : outfits;
   const tabs = [
     { key: 'outfits', label: 'Outfits', icon: Heart, count: outfits.length },
+    { key: 'looks', label: 'Looks', icon: Camera, count: looks.savedLooks.length },
     { key: 'products', label: 'Products', icon: ShoppingBag, count: products.length },
     { key: 'lists', label: 'Shopping plans', icon: ListChecks, count: lists.length },
   ];
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="Saved" subtitle="Outfits you liked, products you bookmarked and your shopping plans." />
+      <PageHeader eyebrow="Planning" title="Saved looks." subtitle="Outfits you liked, looks generated on you, products you bookmarked and your shopping plans." />
 
       <div className="si-tabs" role="tablist">
         {tabs.map(({ key, label, icon: Icon, count }) => (
@@ -82,8 +88,8 @@ export default function SavedItems() {
           <EmptyState
             icon={Heart}
             title="No saved outfits yet"
-            description="Generate outfits from your wardrobe and save the ones you like."
-            actionLabel="Generate outfits"
+            description="Create looks from your wardrobe and keep the ones you love."
+            actionLabel="Create your next look"
             onAction={() => navigate('/outfits')}
           />
         ) : (
@@ -109,6 +115,18 @@ export default function SavedItems() {
             )}
           </>
         )
+      )}
+
+      {tab === 'looks' && (
+        <LookGallery
+          looks={looks.savedLooks}
+          loading={looks.loading}
+          error={looks.error}
+          onRetry={looks.fetchLooks}
+          onUpdate={looks.updateLook}
+          onDelete={looks.deleteLook}
+          emptyText="Save a result from Virtual Try-On or Style Makeover to keep it here."
+        />
       )}
 
       {tab === 'products' && (

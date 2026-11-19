@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, RotateCcw, Check, ImageIcon, Shirt } from 'lucide-react';
+import { Sparkles, RotateCcw, ImageIcon, Shirt } from 'lucide-react';
 import api, { getErrorMessage } from '../services/api';
 import useWardrobe from '../hooks/useWardrobe';
 import { useToast } from '../components/Toast';
@@ -9,6 +9,7 @@ import Card from '../components/Card';
 import Select from '../components/Select';
 import Button from '../components/Button';
 import UploadDropzone from '../components/UploadDropzone';
+import WardrobePicker from '../components/WardrobePicker';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import OutfitCard from '../components/OutfitCard';
@@ -34,32 +35,6 @@ function FeedbackText({ title, text }) {
       <h3 className="fc-section__title">{title}</h3>
       <p className="fc-section__text">{text}</p>
     </section>
-  );
-}
-
-function WardrobePicker({ items, selected, onToggle }) {
-  return (
-    <div className="fc-picker">
-      {items.map((item) => {
-        const isSelected = selected.includes(item._id);
-        return (
-          <button
-            key={item._id}
-            type="button"
-            className={`fc-picker__item ${isSelected ? 'fc-picker__item--selected' : ''}`}
-            onClick={() => onToggle(item._id)}
-            aria-pressed={isSelected}
-            title={item.name}
-          >
-            <span className="fc-picker__image">
-              {item.imageUrl ? <img src={item.imageUrl} alt="" loading="lazy" /> : <ImageIcon size={20} />}
-              {isSelected && <span className="fc-picker__check"><Check size={12} /></span>}
-            </span>
-            <span className="fc-picker__name">{item.name}</span>
-          </button>
-        );
-      })}
-    </div>
   );
 }
 
@@ -145,7 +120,8 @@ export default function FashionCritic() {
     return (
       <div className="animate-fade-in">
         <PageHeader
-          title="Fashion Critic"
+          eyebrow="AI Studio · Fashion Critic"
+          title="The verdict."
           subtitle={occasion ? `Feedback for ${occasion.toLowerCase()}` : 'Your outfit feedback'}
           action={<Button variant="outline" onClick={handleReset}><RotateCcw size={15} /> Review another outfit</Button>}
         />
@@ -208,8 +184,10 @@ export default function FashionCritic() {
   return (
     <div className="animate-fade-in">
       <PageHeader
-        title="Fashion Critic"
-        subtitle="Get honest, constructive feedback on an outfit photo or a combination from your wardrobe."
+        eyebrow="AI Studio"
+        title="An honest second opinion."
+        subtitle="Get constructive feedback on an outfit photo or a combination from your wardrobe."
+        image="/images/editorial/dark-jacket-watch.jpg"
       />
 
       <Card className="fc-form">
@@ -243,7 +221,7 @@ export default function FashionCritic() {
             icon={Shirt}
             title="Not enough items yet"
             description="Add at least two pieces to your wardrobe to review a combination."
-            actionLabel="Go to wardrobe"
+            actionLabel="Build your wardrobe"
             onAction={() => navigate('/wardrobe')}
           />
         ) : (

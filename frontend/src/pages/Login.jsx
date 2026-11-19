@@ -1,9 +1,13 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Scissors } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getErrorMessage } from '../services/api';
+import { USE_AUTH_EMULATOR } from '../firebase';
 import Input from '../components/Input';
 import Button from '../components/Button';
+import AuthShell, { AuthMethodTabs } from '../components/AuthShell';
+import PhoneAuthForm from '../components/PhoneAuthForm';
 
 const FRIENDLY_ERRORS = {
   'auth/invalid-credential': 'Invalid email or password.',
@@ -11,14 +15,29 @@ const FRIENDLY_ERRORS = {
   'auth/wrong-password': 'Invalid email or password.',
   'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.',
   'auth/invalid-email': 'Please enter a valid email address.',
+  'auth/network-request-failed': 'Cannot reach the sign-in service. Make sure the Firebase Auth Emulator is running.',
+};
+
+// Firebase errors carry a `code`; anything else came from our own API.
+const describeError = (err, fallback) => FRIENDLY_ERRORS[err.code] || (err.code ? fallback : getErrorMessage(err, fallback));
+
+// With the local Auth Emulator, accounts only persist if it was stopped cleanly
+// (npm run auth:start / auth:save), so a missing account is the likely cause.
+const EMULATOR_HINT = ' Running locally? If the Auth Emulator was restarted, register again with the same email to restore your wardrobe.';
+const describeLoginError = (err, fallback) => {
+  const message = describeError(err, fallback);
+  return USE_AUTH_EMULATOR && ['auth/invalid-credential', 'auth/user-not-found'].includes(err.code) ? message + EMULATOR_HINT : message;
 };
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [method, setMethod] = useState('email');
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = location.state?.from || '/dashboard';
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -37,9 +56,9 @@ export default function Login() {
     try {
       setLoading(true);
       await login(form.email, form.password);
-      navigate('/dashboard');
+      navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(FRIENDLY_ERRORS[err.code] || 'Login failed. Please try again.');
+      setError(describeLoginError(err, 'Login failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -50,23 +69,32 @@ export default function Login() {
     try {
       setLoading(true);
       await loginWithGoogle();
-      navigate('/dashboard');
+      navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(FRIENDLY_ERRORS[err.code] || 'Google sign-in failed.');
+      setError(describeError(err, 'Google sign-in failed.'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="centered-page">
-      <div className="auth-card">
-        <div className="auth-card__header">
-          <div className="auth-card__logo"><Scissors size={24} /></div>
-          <h1 className="auth-card__title">Welcome back</h1>
-          <p className="auth-card__subtitle">Sign in to your account</p>
-        </div>
-
+    <AuthShell
+      image="/images/editorial/camel-trench.jpg"
+      quote="Every look starts with what you already own."
+      eyebrow="Welcome back"
+      title="Sign in to your studio"
+      subtitle="Your wardrobe, outfits and saved looks are waiting."
+      footer={<>
+        Don&apos;t have an account?{' '}
+        <Link to="/register" className="auth-card__link">Create one</Link>
+      </>}
+    >
+      <AuthMethodTabs method={method} onChange={(value) => { setMethod(value); setError(''); }} />
+      {method === 'phone' ? (
+        <PhoneAuthForm
+          onSuccess={(isNewUser) => navigate(isNewUser ? '/onboarding' : redirectTo, { replace: true })}
+        />
+      ) : (
         <form onSubmit={handleSubmit} className="auth-card__form">
           <Input label="Email" type="email" name="email" placeholder="you@example.com" icon={Mail} value={form.email} onChange={handleChange} />
           <Input label="Password" type="password" name="password" placeholder="Enter your password" icon={Lock} value={form.password} onChange={handleChange} />
@@ -78,12 +106,7 @@ export default function Login() {
             Continue with Google
           </Button>
         </form>
-
-        <p className="auth-card__footer">
-          Don&apos;t have an account?{' '}
-          <Link to="/register" className="auth-card__link">Create one</Link>
-        </p>
-      </div>
-    </div>
+      )}
+    </AuthShell>
   );
 }

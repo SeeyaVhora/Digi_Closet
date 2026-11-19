@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Shirt, Search } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Plus, Shirt, Search, Pencil, Trash2, Camera } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import useWardrobe from '../hooks/useWardrobe';
 import { getErrorMessage } from '../services/api';
 import { useToast } from '../components/Toast';
@@ -61,8 +63,48 @@ function formToPayload(form) {
   };
 }
 
+const wornOn = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+// Read-only view of one piece; editing is a separate, deliberate step.
+function ItemDetail({ item, onEdit, onDelete }) {
+  const rows = [
+    ['Category', [item.category, item.type].filter(Boolean).join(' · ')],
+    ['Colours', item.colors?.join(', ')],
+    ['Pattern', item.pattern],
+    ['Style', item.style],
+    ['Season', item.season?.join(', ')],
+    ['Occasions', item.occasions?.join(', ')],
+    ['Brand', item.brand],
+    ['Size', item.size],
+    ['Worn', item.wearCount ? `${item.wearCount} ${item.wearCount === 1 ? 'time' : 'times'}${item.lastWornAt ? `, last on ${wornOn.format(new Date(item.lastWornAt))}` : ''}` : 'Not logged yet'],
+  ].filter(([, value]) => value);
+
+  return (
+    <div className="item-detail">
+      <div className="item-detail__image">
+        {item.imageUrl ? <img src={item.imageUrl} alt={item.name} /> : <Shirt size={48} strokeWidth={1} />}
+      </div>
+      <div className="item-detail__info">
+        <span className="eyebrow">{item.category}</span>
+        <h2 className="item-detail__name">{item.name}</h2>
+        {item.notes && <p className="item-detail__notes">{item.notes}</p>}
+        <dl className="item-detail__rows">
+          {rows.map(([label, value]) => (
+            <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
+          ))}
+        </dl>
+        <div className="item-detail__actions">
+          <Button variant="dark" onClick={() => onEdit(item)}><Pencil size={14} /> Edit</Button>
+          {item.imageUrl && <Link to="/try-on" className="btn btn--outline btn--md"><Camera size={14} /> Try it on</Link>}
+          <Button variant="ghost" onClick={() => onDelete(item)}><Trash2 size={14} /> Remove</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Wardrobe() {
-  const { items, loading, error, addItem, updateItem, deleteItem, uploadImage, classifyImage, fetchItems } = useWardrobe({ autoFetch: false });
+  const { items, loading, error, addItem, updateItem, deleteItem, classifyImage, fetchItems } = useWardrobe({ autoFetch: false });
   const { showToast } = useToast();
 
   const [filters, setFilters] = useState({ category: '', season: '', occasion: '', sort: '' });
@@ -77,8 +119,22 @@ export default function Wardrobe() {
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [viewing, setViewing] = useState(null);
 
   const hasFilters = Boolean(search || filters.category || filters.season || filters.occasion);
+
+  // The top-bar search (?search=) and the dashboard's "Add clothing" (?add=1) link here.
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const query = searchParams.get('search');
+    if (query !== null) setSearch(query);
+    if (searchParams.get('add')) {
+      openModal();
+      setSearchParams({}, { replace: true });
+    }
+    // openModal only resets local form state; re-running on it would reopen the modal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -154,11 +210,7 @@ export default function Wardrobe() {
     setFormError('');
     try {
       const payload = formToPayload(form);
-      if (imageFile) {
-        const uploaded = await uploadImage(imageFile);
-        payload.imageUrl = uploaded.imageUrl;
-        payload.imagePath = uploaded.imagePath;
-      } else if (!form.imageUrl) {
+      if (!imageFile && !form.imageUrl) {
         payload.imageUrl = null;
       }
       if (aiStatus?.type === 'success') {
@@ -166,10 +218,10 @@ export default function Wardrobe() {
       }
 
       if (editingItem) {
-        await updateItem(editingItem._id, payload);
+        await updateItem(editingItem._id, payload, imageFile);
         showToast('Item updated.', 'success');
       } else {
-        await addItem(payload);
+        await addItem(payload, imageFile);
         showToast(`${payload.name} added to your wardrobe.`, 'success');
       }
       setModalOpen(false);
@@ -194,9 +246,12 @@ export default function Wardrobe() {
   return (
     <div className="animate-fade-in">
       <PageHeader
-        title="Wardrobe"
-        subtitle={loading && !items.length ? 'Loading your pieces…' : `${items.length} ${items.length === 1 ? 'piece' : 'pieces'}${hasFilters ? ' matching your filters' : ''}`}
-        action={<Button onClick={() => openModal()}><Plus size={16} /> Add item</Button>}
+        eyebrow="The pieces you own"
+        title="A place for everything you wear."
+        subtitle={loading && !items.length ? 'Loading your pieces…' : hasFilters ? `${items.length} ${items.length === 1 ? 'piece matches' : 'pieces match'} your filters.` : `${items.length} ${items.length === 1 ? 'piece' : 'pieces'}. Endless possibilities.`}
+        image="/images/editorial/suits-rail.jpg"
+        variant="stacked"
+        action={<Button variant="dark" onClick={() => openModal()}><Plus size={16} /> Add a piece</Button>}
       />
 
       <div className="wardrobe-toolbar">
@@ -213,18 +268,19 @@ export default function Wardrobe() {
         <Select options={SORT_OPTIONS} placeholder="Newest first" value={filters.sort} onChange={(e) => setFilter('sort', e.target.value)} aria-label="Sort" />
       </div>
 
-      <div className="filter-bar">
-        <button onClick={() => setFilter('category', '')} className={`filter-chip ${!filters.category ? 'filter-chip--active' : ''}`}>All</button>
+      <nav className="category-index" aria-label="Categories">
+        <button onClick={() => setFilter('category', '')} className={!filters.category ? 'is-active' : ''} aria-pressed={!filters.category}>All</button>
         {CATEGORIES.map((cat) => (
           <button
             key={cat}
             onClick={() => setFilter('category', filters.category === cat ? '' : cat)}
-            className={`filter-chip ${filters.category === cat ? 'filter-chip--active' : ''}`}
+            className={filters.category === cat ? 'is-active' : ''}
+            aria-pressed={filters.category === cat}
           >
             {cat}
           </button>
         ))}
-      </div>
+      </nav>
 
       {error ? (
         <ErrorMessage message={error} onRetry={() => setFilters((prev) => ({ ...prev }))} />
@@ -236,16 +292,16 @@ export default function Wardrobe() {
         ) : (
           <EmptyState
             icon={Shirt}
-            title="Your wardrobe is empty"
-            description="Add a photo of a piece you own and Gemini will tag its category, colours and style for you."
-            actionLabel="Add your first item"
+            title="An empty wardrobe. A fresh start."
+            description="Photograph a piece you own and it will be named and tagged for you."
+            actionLabel="Add your first piece"
             onAction={() => openModal()}
           />
         )
       ) : (
         <div className="grid grid--cards">
           {items.map((item) => (
-            <ClothingCard key={item._id} item={item} onClick={openModal} onEdit={openModal} onDelete={setDeleteTarget} />
+            <ClothingCard key={item._id} item={item} onClick={setViewing} onEdit={openModal} onDelete={setDeleteTarget} />
           ))}
         </div>
       )}
@@ -275,6 +331,16 @@ export default function Wardrobe() {
           error={formError}
           onSubmit={handleSubmit}
         />
+      </Modal>
+
+      <Modal isOpen={Boolean(viewing)} onClose={() => setViewing(null)} title="From your wardrobe" size="xl">
+        {viewing && (
+          <ItemDetail
+            item={viewing}
+            onEdit={(item) => { setViewing(null); openModal(item); }}
+            onDelete={(item) => { setViewing(null); setDeleteTarget(item); }}
+          />
+        )}
       </Modal>
 
       <ConfirmDialog

@@ -1,5 +1,6 @@
 const ClothingItem = require('../models/ClothingItem');
 const SavedOutfit = require('../models/SavedOutfit');
+const OutfitPlan = require('../models/OutfitPlan');
 const stylistService = require('../services/stylistService');
 const weatherService = require('../services/weatherService');
 
@@ -181,6 +182,7 @@ const deleteOutfit = async (req, res, next) => {
     if (!outfit) {
       return res.status(404).json({ success: false, message: 'Outfit not found.' });
     }
+    await OutfitPlan.deleteMany({ owner: req.user._id, outfit: outfit._id });
     res.json({ success: true, message: 'Outfit deleted.' });
   } catch (error) {
     next(error);

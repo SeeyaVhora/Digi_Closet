@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Wand2, Shuffle, RefreshCw, Shirt } from 'lucide-react';
 import useOutfits from '../hooks/useOutfits';
 import useWardrobe from '../hooks/useWardrobe';
@@ -23,7 +23,18 @@ export default function OutfitRecommendations() {
   const { recommend, recommending, saveOutfit } = useOutfits({ autoFetch: false });
   const { showToast } = useToast();
 
-  const [form, setForm] = useState({ occasion: 'College', style: '', season: '', city: 'Bengaluru' });
+  // Links such as the dashboard's style inspiration preselect ?style= or ?occasion=.
+  const [searchParams] = useSearchParams();
+  const [form, setForm] = useState(() => {
+    const style = searchParams.get('style');
+    const occasion = searchParams.get('occasion');
+    return {
+      occasion: OCCASIONS.includes(occasion) ? occasion : 'College',
+      style: STYLES.includes(style) ? style : '',
+      season: '',
+      city: 'Bengaluru',
+    };
+  });
   const [colors, setColors] = useState([]);
   const [outfits, setOutfits] = useState([]);
   const [seenCombos, setSeenCombos] = useState([]);
@@ -81,8 +92,10 @@ export default function OutfitRecommendations() {
   return (
     <div className="animate-fade-in">
       <PageHeader
-        title="Outfit Generator"
-        subtitle="Complete looks put together from the pieces you already own."
+        eyebrow="Discover your next look"
+        title="New combinations. Same you."
+        subtitle="Complete outfits put together from the pieces you already own, for the occasion, style and weather you choose."
+        image="/images/editorial/flatlay-blazer.jpg"
       />
 
       {items.length === 0 ? (
@@ -90,7 +103,7 @@ export default function OutfitRecommendations() {
           icon={Shirt}
           title="Add some clothes first"
           description="Outfits are built only from your own wardrobe. Add at least a top, a bottom and a pair of shoes."
-          actionLabel="Go to wardrobe"
+          actionLabel="Build your wardrobe"
           onAction={() => navigate('/wardrobe')}
         />
       ) : (
@@ -124,7 +137,7 @@ export default function OutfitRecommendations() {
 
               <div className="generator-form__actions">
                 <Button type="submit" loading={recommending && !lastRequest?.surprise}>
-                  <Wand2 size={16} /> Generate outfits
+                  <Wand2 size={16} /> Create your next look
                 </Button>
                 <Button type="button" variant="outline" disabled={recommending} onClick={() => generate({ surprise: true, city: form.city })}>
                   <Shuffle size={16} /> Surprise me

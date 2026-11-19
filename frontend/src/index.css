@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
-
 @import './styles/tokens.css';
 @import './styles/base.css';
 
@@ -10,7 +8,6 @@
 @import './styles/components/Badge.css';
 @import './styles/components/Avatar.css';
 @import './styles/components/Modal.css';
-@import './styles/components/Navbar.css';
 @import './styles/components/Sidebar.css';
 @import './styles/components/PageHeader.css';
 @import './styles/components/EmptyState.css';
@@ -23,7 +20,7 @@
 @import './styles/components/OutfitCard.css';
 @import './styles/components/ChatBubble.css';
 @import './styles/components/ColorSwatch.css';
+@import './styles/components/WardrobePicker.css';
 
 @import './styles/layout.css';
 @import './styles/pages.css';
-@import './styles/home.css';

@@ -1,49 +1,55 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, User, Shirt, Wand2, CloudSun, Palette, Sparkles, Bot,
-  Search, Wallet, Camera, Heart, Settings, LogOut, X, Scissors,
+  LayoutGrid, Shirt, Wand2, Camera, WandSparkles, Palette, Sparkles, MessageCircle,
+  Search, CloudSun, Wallet, CalendarDays, ChartNoAxesColumn, Heart, User, Settings, LogOut, X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import Avatar from './Avatar';
+import Wordmark from './Wordmark';
 
 const navGroups = [
   {
-    label: null,
+    label: 'Your space',
     items: [
-      { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { to: '/wardrobe', label: 'Wardrobe', icon: Shirt },
+      { to: '/dashboard', label: 'Overview', icon: LayoutGrid },
+      { to: '/wardrobe', label: 'My Wardrobe', icon: Shirt },
+      { to: '/saved', label: 'Saved Looks', icon: Heart },
     ],
   },
   {
-    label: 'Styling',
+    label: 'AI Studio',
     items: [
       { to: '/outfits', label: 'Outfit Generator', icon: Wand2 },
-      { to: '/recommendations', label: 'Smart Picks', icon: CloudSun },
-      { to: '/fashion-critic', label: 'Fashion Critic', icon: Sparkles },
+      { to: '/try-on', label: 'Virtual Try-On', icon: Camera },
+      { to: '/makeover', label: 'Style Makeover', icon: WandSparkles },
       { to: '/colors', label: 'Colour Palette', icon: Palette },
-      { to: '/chat', label: 'Stylist Chat', icon: Bot },
+      { to: '/chat', label: 'AI Stylist', icon: MessageCircle },
+      { to: '/fashion-critic', label: 'Fashion Critic', icon: Sparkles },
     ],
   },
   {
-    label: 'Shopping',
+    label: 'Discover',
     items: [
       { to: '/shopping/finder', label: 'Clothes Finder', icon: Search },
+      { to: '/recommendations', label: 'Weather Looks', icon: CloudSun },
       { to: '/shopping/budget', label: 'Budget Planner', icon: Wallet },
-      { to: '/saved', label: 'Saved', icon: Heart },
     ],
   },
   {
-    label: 'More',
+    label: 'Planning',
     items: [
-      { to: '/try-on', label: 'Virtual Try-On', icon: Camera },
-      { to: '/profile', label: 'Profile', icon: User },
-      { to: '/settings', label: 'Settings & Privacy', icon: Settings },
+      { to: '/planner', label: 'Outfit Calendar', icon: CalendarDays },
+      { to: '/insights', label: 'Wardrobe Insights', icon: ChartNoAxesColumn },
     ],
   },
 ];
 
+const accountLinks = [
+  { to: '/profile', label: 'Profile', icon: User },
+  { to: '/settings', label: 'Settings', icon: Settings },
+];
+
 export default function Sidebar({ isOpen, onClose }) {
-  const { user, firebaseUser, logout } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -52,49 +58,39 @@ export default function Sidebar({ isOpen, onClose }) {
     onClose?.();
   };
 
-  const linkClass = ({ isActive }) =>
-    `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`;
+  const link = ({ to, label, icon: Icon }) => (
+    <NavLink key={to} to={to} className={({ isActive }) => `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`} onClick={onClose}>
+      <Icon size={15} strokeWidth={1.4} />
+      {label}
+    </NavLink>
+  );
 
   return (
     <>
       {isOpen && <div className="sidebar__backdrop" onClick={onClose} />}
 
-      <aside className={`sidebar ${isOpen ? 'sidebar--open' : ''}`}>
+      <aside className={`sidebar ${isOpen ? 'sidebar--open' : ''}`} aria-label="Studio navigation">
         <div className="sidebar__header">
-          <div className="navbar__brand">
-            <div className="navbar__logo"><Scissors size={16} /></div>
-            <span className="navbar__title">DIGI CLOSET</span>
-          </div>
+          <Wordmark to="/dashboard" />
           <button className="sidebar__close" onClick={onClose} aria-label="Close menu">
-            <X size={20} />
+            <X size={20} strokeWidth={1.5} />
           </button>
         </div>
 
         <nav className="sidebar__nav custom-scrollbar">
-          {navGroups.map((group, idx) => (
-            <div key={idx}>
-              {group.label && <p className="sidebar__section-label">{group.label}</p>}
-              {group.items.map(({ to, label, icon: Icon }) => (
-                <NavLink key={to} to={to} className={linkClass} onClick={onClose}>
-                  <Icon size={18} />
-                  {label}
-                </NavLink>
-              ))}
+          {navGroups.map((group) => (
+            <div key={group.label} className="sidebar__group">
+              <p className="sidebar__section-label">{group.label}</p>
+              {group.items.map(link)}
             </div>
           ))}
         </nav>
 
         <div className="sidebar__footer">
-          <div className="sidebar__user">
-            <Avatar name={user?.name || firebaseUser?.displayName || ''} size="sm" />
-            <div style={{ minWidth: 0 }}>
-              <p className="sidebar__user-name">{user?.name || firebaseUser?.displayName || 'User'}</p>
-              <p className="sidebar__user-email">{user?.email || firebaseUser?.email}</p>
-            </div>
-          </div>
-          <button className="sidebar__logout" onClick={handleLogout}>
-            <LogOut size={18} />
-            Sign Out
+          {accountLinks.map(link)}
+          <button className="sidebar__link sidebar__logout" onClick={handleLogout}>
+            <LogOut size={15} strokeWidth={1.4} />
+            Log out
           </button>
         </div>
       </aside>

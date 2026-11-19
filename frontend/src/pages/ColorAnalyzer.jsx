@@ -235,7 +235,8 @@ export default function ColorAnalyzer() {
     return (
       <div className="animate-fade-in">
         <PageHeader
-          title="Colour Palette"
+          eyebrow="AI Studio · Personal Colour"
+          title="Your palette."
           subtitle={editing ? 'Remove colours you don’t like and add your own.' : 'Review your suggested palette before saving it.'}
           action={
             <div className="cp-actions">
@@ -262,8 +263,10 @@ export default function ColorAnalyzer() {
   return (
     <div className="animate-fade-in">
       <PageHeader
-        title="Colour Palette"
-        subtitle="Find clothing colours that suit you, based on a clear photo of your face."
+        eyebrow="AI Studio"
+        title="Find the colours that feel like you."
+        subtitle="Find the clothing colours that flatter you, read from a clear photo of your face."
+        image="/images/editorial/knit-rail.jpg"
         action={saved && !showUpload && (
           <div className="cp-actions">
             <Button variant="ghost" onClick={() => setConfirmRemove(true)}><Trash2 size={15} /> Remove</Button>

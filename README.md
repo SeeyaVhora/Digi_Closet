@@ -79,7 +79,7 @@ Digi_Closet/
 │   │   ├── middleware/         # Auth verification, file upload, error handling, rate limiting
 │   │   ├── models/             # 8 Mongoose schemas (User, ClothingItem, SavedOutfit, etc.)
 │   │   ├── routes/             # 12 Modular route definitions mounted under /api
-│   │   ├── services/           # Gemini AI, weather, image storage, try-on services
+│   │   ├── services/           # Gemini AI, image generation, weather, image storage
 │   │   └── index.js            # Express app initialization and HTTP listener
 │   ├── uploads/                # Local uploads directory (auto-created in dev, gitignored)
 │   ├── .env.example            # Backend environment template
@@ -91,7 +91,7 @@ Digi_Closet/
 │   │   ├── components/         # 15 reusable UI components (Buttons, Modals, Cards, Toasts)
 │   │   ├── context/            # AuthContext (Firebase auth lifecycle)
 │   │   ├── hooks/              # 8 custom hooks (useWardrobe, useOutfits, useChat, etc.)
-│   │   ├── layout/             # MainLayout (Sidebar + Navbar) and AuthLayout
+│   │   ├── layout/             # MainLayout (sidebar + top bar) and AuthLayout
 │   │   ├── pages/              # 15 React route pages (Dashboard, Wardrobe, Critic, etc.)
 │   │   ├── routes/             # AppRoutes and ProtectedRoute authentication guard
 │   │   ├── services/           # Axios instance with auth interceptor
@@ -154,9 +154,12 @@ npm run db:start
 *(Starts a local MongoDB instance isolated to `~/.digi-closet/mongodb-data`)*
 
 ### Step 2: Start the Firebase Auth Emulator
+Requires Java (`brew install openjdk`, then add `/opt/homebrew/opt/openjdk/bin` to your `PATH`).
 ```bash
-firebase emulators:start --only auth --project demo-digi-closet
+cd backend
+npm run auth:start
 ```
+*(Accounts are loaded from `emulator-data/` on start and saved every 30 seconds and on exit, so the same email and password keep working after restarts. Java is found automatically if installed with Homebrew.)*
 
 ### Step 3: Start the Backend Server
 ```bash
@@ -172,12 +175,6 @@ npm run dev
 ```
 *(Runs Vite client at `http://localhost:5173`)*
 
-### Step 5: (Optional) Start Firebase Auth Emulator
-If you wish to test signups locally without connecting to Google Cloud:
-```bash
-firebase emulators:start --only auth --project demo-digi-closet
-```
-
 Now open **`http://localhost:5173`** in your browser to begin exploring DigiCloset!
 
 ---
@@ -191,6 +188,8 @@ Now open **`http://localhost:5173`** in your browser to begin exploring DigiClos
 | `npm start` | Launches the server in standard production mode using `node src/index.js`. |
 | `npm run db:start` | Launches a background `mongod` daemon pointing to local storage directory. |
 | `npm run db:stop` | Gracefully shuts down the background `mongod` instance. |
+| `npm run auth:start` | Runs the Firebase Auth Emulator. Accounts load from `emulator-data/` and are saved every 30 seconds and on exit, so logins survive restarts, crashes and closed terminals. |
+| `npm run auth:save` | Saves the running emulator's accounts to `emulator-data/` right now (use before closing a terminal you can't Ctrl+C). |
 
 ### Frontend Scripts (`frontend/package.json`)
 | Command | Action |
@@ -217,7 +216,7 @@ The DigiCloset backend exposes 12 domain route modules. Detailed request and res
 | `/api/styling` | `POST` | Required | Occasion-based styling suggestions (Weddings, Date Night, Casual, etc.). |
 | `/api/products`| `GET`, `POST` | Optional / Required | Search curated fashion items; filter by category and price; bookmark favorites. |
 | `/api/shopping`| `GET`, `POST`, `PUT`, `DELETE` | Required | AI budget shopping planner; manage custom shopping lists and costs. |
-| `/api/try-on`  | `POST`, `GET` | Required | Submit photo for try-on; fetch job status with Gemini Fit & Silhouette analysis. |
+| `/api/looks`   | `GET`, `POST`, `PATCH`, `DELETE` | Required | Virtual Try-On and Style Makeover: generate photos of you in wardrobe items or a suggested style; save, favourite, delete. |
 | `/api/chat`    | `POST`, `DELETE` | Required | AI conversational assistant with context injection from user's wardrobe. |
 | `/api/weather` | `GET` | Public | Real-time weather proxy using Open-Meteo API. |
 
@@ -231,10 +230,15 @@ The DigiCloset backend exposes 12 domain route modules. Detailed request and res
 
 ### 2. "Firebase: Error (auth/network-request-failed)"
 - **Cause:** The client is trying to reach the Firebase Auth Emulator, but the emulator is not running.
-- **Solution:** Either run `firebase emulators:start --only auth --project demo-digi-closet` in your terminal, or configure real Firebase credentials in `frontend/.env` and remove `VITE_FIREBASE_AUTH_EMULATOR_HOST`.
+- **Solution:** Either run `npm run auth:start` inside the `backend/` directory, or configure real Firebase credentials in `frontend/.env` and remove `VITE_FIREBASE_AUTH_EMULATOR_HOST`.
+
+### Phone number (OTP) sign-in
+- **Locally:** the Auth Emulator never sends a real SMS. After "Send code", the sign-in form shows the code (marked as local development), and the emulator terminal logs it too.
+- **In production:** enable the Phone provider in Firebase Console > Authentication > Sign-in method, and add your domain to the authorized domains. Firebase sends the SMS and shows an invisible reCAPTCHA check. SMS is billed per message on the Blaze plan.
 
 ### 3. "AI features show 'Gemini is not configured' or 'temporarily overloaded'"
 - **Not configured:** add `GEMINI_API_KEY` to `backend/.env` (get one at [Google AI Studio](https://aistudio.google.com/)) and restart the backend. There is no offline mode, by design.
+- **Virtual Try-On / Style Makeover say "no quota for this model":** Gemini image models are paid-only. Enable billing for the API key's Google Cloud project in [Google AI Studio](https://aistudio.google.com/); no code or `.env` change is needed afterwards.
 - **Overloaded (503):** Google is short on capacity for that model. The backend already retries on `GEMINI_FALLBACK_MODEL`; wait a moment, or set `GEMINI_MODEL` to a model with more headroom.
 - **Clothes Finder shows no products:** live listings need `PRODUCT_SEARCH_API_KEY` (a [SerpApi](https://serpapi.com) key). Without it you get Gemini's parsed filters and marketplace search links only.
 

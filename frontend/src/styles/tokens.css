@@ -1,48 +1,73 @@
 /**
- * DigiCloset design tokens — light, warm, minimal.
- * Palette: off-white and beige surfaces, charcoal type, brown accents.
+ * DigiCloset design system tokens.
+ * Warm cream grounds, muted olive accents, near-black type and actions.
+ * Components use the --color-* / --font-* tokens or the aliases below.
  */
 
 :root {
-  /* --- Backgrounds --- */
-  --bg-base: #FAF8F4;
-  --bg-elevated: #FFFFFF;
-  --bg-surface: #FFFFFF;
-  --bg-surface-hover: #F4EFE7;
-  --bg-muted: #F1EBE1;
-  --bg-beige: #E8DDCC;
-  --bg-overlay: rgba(37, 35, 33, 0.4);
+  /* ===== Brand palette (warm cream, muted olive, near-black) ===== */
+  --color-background: #EAE6DA;            /* page background */
+  --color-background-secondary: #F5F2E9;  /* alternate sections, sidebar */
+  --color-surface: #F8F6EF;               /* cards, inputs, panels */
+  --color-beige: #DED8C9;                 /* soft beige bands */
+  --color-taupe: #B6AA95;                 /* hairlines, quiet accents */
+  --color-accent: #6D6855;                /* muted olive: labels, active marks */
+  --color-text-primary: #171717;
+  --color-text-secondary: #5D594F;
+  --color-border: #D4CDBF;
+  --color-ink: #1C1B18;                   /* buttons, dark bands */
+  --color-white: #FFFFFF;
+  /* RGB triplets for translucent overlays: rgba(var(--ink-rgb), 0.5) */
+  --ink-rgb: 23, 23, 23;
+  --cream-rgb: 234, 230, 218;
 
-  /* --- Text --- */
-  --text-primary: #252321;
-  --text-secondary: #5E5A55;
-  --text-muted: #88847E;
-  --text-inverse: #FFFFFF;
+  /* ===== Aliases used across the existing stylesheets ===== */
+  --ivory: var(--color-background);
+  --ivory-light: var(--color-background-secondary);
+  --beige: var(--color-beige);
+  --taupe: var(--color-taupe);
+  --brown: var(--color-accent);
+  --brown-dark: var(--color-ink);
+  --charcoal: var(--color-text-primary);
+  --white: var(--color-white);
 
-  /* --- Accents --- */
-  --accent: #6F5744;
-  --accent-hover: #5B4636;
-  --accent-light: #B89B7A;
-  --accent-soft: #F1E9DE;
-  --accent-blue: #6F5744;
-  --accent-blue-soft: #F1E9DE;
-  --accent-amber: #B07D3A;
+  --bg-base: var(--color-background);
+  --bg-elevated: var(--color-surface);
+  --bg-surface: var(--color-surface);
+  --bg-surface-hover: #EFEBE0;
+  --bg-muted: var(--color-beige);
+  --bg-beige: var(--color-beige);
+  --bg-ink: var(--color-ink);
+  --bg-overlay: rgba(var(--ink-rgb), 0.45);
 
-  /* --- Semantic --- */
-  --color-success: #4F7A55;
-  --color-success-soft: #EAF1E8;
-  --color-warning: #A86F1E;
-  --color-warning-soft: #F8EEDC;
-  --color-danger: #A8463A;
-  --color-danger-soft: #F7E7E3;
-  --color-info: #55697A;
-  --color-info-soft: #E9EEF1;
+  --text-primary: var(--color-text-primary);
+  --text-heading: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-muted: #8A8576;
+  --text-inverse: var(--color-white);
 
-  /* --- Borders --- */
-  --border-subtle: #EEE8DE;
-  --border-default: #E2D9CB;
-  --border-strong: #CBBDA8;
-  --border-accent: #B89B7A;
+  --accent: var(--color-accent);
+  --accent-hover: #575343;
+  --accent-light: var(--color-taupe);
+  --accent-soft: var(--color-beige);
+  --accent-blue: var(--color-accent);
+  --accent-blue-soft: var(--color-beige);
+  --accent-amber: #8C7A55;
+
+  /* --- Semantic (muted to sit inside the palette) --- */
+  --color-success: #5E6B4E;
+  --color-success-soft: #E6E8DC;
+  --color-warning: #8C7340;
+  --color-warning-soft: #EFE7D6;
+  --color-danger: #8E4A3D;
+  --color-danger-soft: #F1E3DE;
+  --color-info: #5D5F5A;
+  --color-info-soft: #E9E8E2;
+
+  --border-subtle: #DDD7CA;
+  --border-default: var(--color-border);
+  --border-strong: var(--color-taupe);
+  --border-accent: var(--color-accent);
 
   /* --- Spacing (4px scale) --- */
   --space-1: 0.25rem;
@@ -60,16 +85,22 @@
   --space-20: 5rem;
 
   /* --- Radii --- */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.625rem;
-  --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
+  /* Editorial: mostly square edges, pills only for small tags. */
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 6px;
   --radius-full: 9999px;
 
   /* --- Typography --- */
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  /* ===== Typography ===== */
+  --font-body: 'Manrope', system-ui, -apple-system, sans-serif;           /* interface */
+  --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif; /* editorial headings */
+  --font-editorial: 'Playfair Display', Georgia, serif;                   /* highlighted phrases */
+  --font-campaign: 'Archivo', 'Helvetica Neue', Arial, sans-serif;        /* large sans campaign line */
+  --font-sans: var(--font-body);
+  --font-hero: var(--font-campaign);
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
@@ -79,17 +110,20 @@
   --text-3xl: 1.875rem;
   --text-4xl: 2.25rem;
   --text-5xl: 3rem;
+  --text-display: clamp(2.5rem, 5vw, 4rem);
+  --tracking-label: 0.14em;
 
   /* --- Shadows (kept faint; borders do most of the work) --- */
-  --shadow-sm: 0 1px 2px rgba(37, 35, 33, 0.04);
-  --shadow-md: 0 4px 14px rgba(37, 35, 33, 0.06);
-  --shadow-lg: 0 12px 32px rgba(37, 35, 33, 0.1);
+  --shadow-sm: none;
+  --shadow-md: 0 6px 20px rgba(var(--ink-rgb), 0.05);
+  --shadow-lg: 0 18px 40px rgba(var(--ink-rgb), 0.1);
   --shadow-glow: 0 0 0 1px var(--border-accent);
 
   /* --- Transitions --- */
   --transition-fast: 120ms ease;
   --transition-base: 200ms ease;
   --transition-slow: 320ms ease;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* --- Z-index --- */
   --z-dropdown: 30;

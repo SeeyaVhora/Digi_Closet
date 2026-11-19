@@ -78,7 +78,9 @@ const userSchema = new mongoose.Schema(
   {
     firebaseUid: { type: String, required: true, unique: true, index: true },
     name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    // An account has an email, a phone number (OTP sign-in), or both.
+    email: { type: String, lowercase: true, trim: true },
+    phoneNumber: { type: String, trim: true },
     onboardingCompleted: { type: Boolean, default: false },
     stylePreferences: { type: stylePreferencesSchema, default: () => ({}) },
     physicalProfile: { type: physicalProfileSchema, default: () => ({}) },
@@ -90,5 +92,9 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Unique only when present, so phone-only and email-only accounts can coexist.
+userSchema.index({ email: 1 }, { unique: true, partialFilterExpression: { email: { $type: 'string' } } });
+userSchema.index({ phoneNumber: 1 }, { unique: true, partialFilterExpression: { phoneNumber: { $type: 'string' } } });
 
 module.exports = mongoose.model('User', userSchema);

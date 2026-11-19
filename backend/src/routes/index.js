@@ -10,7 +10,8 @@ const outfitRoutes = require('./outfitRoutes');
 const fashionCriticRoutes = require('./fashionCriticRoutes');
 const colorAnalyzerRoutes = require('./colorAnalyzerRoutes');
 const shoppingRoutes = require('./shoppingRoutes');
-const tryOnRoutes = require('./tryOnRoutes');
+const lookRoutes = require('./lookRoutes');
+const plannerRoutes = require('./plannerRoutes');
 const chatRoutes = require('./chatRoutes');
 const weatherRoutes = require('./weatherRoutes');
 
@@ -24,7 +25,8 @@ router.use('/outfits', outfitRoutes);
 router.use('/fashion', fashionCriticRoutes);
 router.use('/colors', colorAnalyzerRoutes);
 router.use('/shopping', shoppingRoutes);
-router.use('/try-on', tryOnRoutes);
+router.use('/looks', lookRoutes);
+router.use('/planner', plannerRoutes);
 router.use('/chat', chatRoutes);
 router.use('/weather', weatherRoutes);
 
@@ -36,6 +38,7 @@ router.get('/health', (req, res) => {
     message: dbConnected ? 'Digi Closet API is running.' : 'API is up but the database is not connected.',
     database: dbConnected ? 'connected' : 'disconnected',
     gemini: env.GEMINI_CONFIGURED ? env.GEMINI_MODEL : 'not configured',
+    imageGeneration: env.GEMINI_CONFIGURED ? `${env.IMAGE_GENERATION_PROVIDER} (${env.GEMINI_IMAGE_MODEL})` : 'not configured',
     productSearch: env.PRODUCT_SEARCH_CONFIGURED ? env.PRODUCT_SEARCH_PROVIDER : 'not configured',
   });
 });

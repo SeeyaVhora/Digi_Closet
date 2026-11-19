@@ -75,8 +75,8 @@ export default function SmartRecommendations() {
   if (!items.length) {
     return (
       <div className="animate-fade-in">
-        <PageHeader title="Smart Picks" subtitle="Outfit suggestions that follow the weather, your taste and your past favourites." />
-        <EmptyState icon={Shirt} title="No wardrobe yet" description="Smart picks come from your own clothes. Add a few pieces to get started." actionLabel="Go to wardrobe" onAction={() => navigate('/wardrobe')} />
+        <PageHeader eyebrow="Discover" title="Dress for the day ahead." subtitle="Outfit suggestions that follow the forecast, your taste and your past favourites." image="/images/editorial/knit-outdoors.jpg" variant="overlay" />
+        <EmptyState icon={Shirt} title="No wardrobe yet" description="Smart picks come from your own clothes. Add a few pieces to get started." actionLabel="Build your wardrobe" onAction={() => navigate('/wardrobe')} />
       </div>
     );
   }
@@ -85,7 +85,7 @@ export default function SmartRecommendations() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="Smart Picks" subtitle="Outfit suggestions that follow the weather, your taste and your past favourites." />
+      <PageHeader eyebrow="Discover" title="Dress for the day ahead." subtitle="Outfit suggestions that follow the forecast, your taste and your past favourites." image="/images/editorial/knit-outdoors.jpg" variant="overlay" />
 
       <div className="smart-bar section">
         <div className="smart-presets" role="tablist" aria-label="Occasion">

@@ -1,20 +1,28 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Scissors } from 'lucide-react';
+import { User, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getErrorMessage } from '../services/api';
 import Input from '../components/Input';
 import Button from '../components/Button';
+import AuthShell, { AuthMethodTabs } from '../components/AuthShell';
+import PhoneAuthForm from '../components/PhoneAuthForm';
 
 const FRIENDLY_ERRORS = {
   'auth/email-already-in-use': 'An account with this email already exists.',
   'auth/weak-password': 'Password should be at least 6 characters.',
   'auth/invalid-email': 'Please enter a valid email address.',
+  'auth/network-request-failed': 'Cannot reach the sign-in service. Make sure the Firebase Auth Emulator is running.',
 };
+
+// Firebase errors carry a `code`; anything else came from our own API.
+const describeError = (err, fallback) => FRIENDLY_ERRORS[err.code] || (err.code ? fallback : getErrorMessage(err, fallback));
 
 export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [method, setMethod] = useState('email');
   const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
@@ -45,7 +53,7 @@ export default function Register() {
       await register(form.name, form.email, form.password);
       navigate('/onboarding');
     } catch (err) {
-      setError(FRIENDLY_ERRORS[err.code] || 'Registration failed. Please try again.');
+      setError(describeError(err, 'Registration failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -58,21 +66,31 @@ export default function Register() {
       await loginWithGoogle();
       navigate('/onboarding');
     } catch (err) {
-      setError(FRIENDLY_ERRORS[err.code] || 'Google sign-in failed.');
+      setError(describeError(err, 'Google sign-in failed.'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="centered-page">
-      <div className="auth-card">
-        <div className="auth-card__header">
-          <div className="auth-card__logo"><Scissors size={24} /></div>
-          <h1 className="auth-card__title">Create your account</h1>
-          <p className="auth-card__subtitle">Start your fashion journey today</p>
-        </div>
-
+    <AuthShell
+      image="/images/editorial/hero-studio-shirt.jpg"
+      quote="Your style. Your world."
+      eyebrow="Join DigiCloset"
+      title="Create your account"
+      subtitle="Build your digital wardrobe and meet your personal AI stylist."
+      footer={<>
+        Already have an account?{' '}
+        <Link to="/login" className="auth-card__link">Sign in</Link>
+      </>}
+    >
+      <AuthMethodTabs method={method} onChange={(value) => { setMethod(value); setError(''); }} />
+      {method === 'phone' ? (
+        <PhoneAuthForm
+          askName
+          onSuccess={(isNewUser) => navigate(isNewUser ? '/onboarding' : '/dashboard', { replace: true })}
+        />
+      ) : (
         <form onSubmit={handleSubmit} className="auth-card__form">
           <Input label="Full Name" name="name" placeholder="John Doe" icon={User} value={form.name} onChange={handleChange} />
           <Input label="Email" type="email" name="email" placeholder="you@example.com" icon={Mail} value={form.email} onChange={handleChange} />
@@ -86,12 +104,7 @@ export default function Register() {
             Continue with Google
           </Button>
         </form>
-
-        <p className="auth-card__footer">
-          Already have an account?{' '}
-          <Link to="/login" className="auth-card__link">Sign in</Link>
-        </p>
-      </div>
-    </div>
+      )}
+    </AuthShell>
   );
 }

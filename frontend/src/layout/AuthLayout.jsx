@@ -1,13 +1,10 @@
 import { Outlet } from 'react-router-dom';
-import Navbar from '../components/Navbar';
 
+// Public pages (landing, sign in, register) each bring their own chrome.
 export default function AuthLayout() {
   return (
     <div className="auth-layout">
-      <Navbar />
-      <main>
-        <Outlet />
-      </main>
+      <Outlet />
     </div>
   );
 }

@@ -19,14 +19,17 @@ import SmartRecommendations from '../pages/SmartRecommendations';
 import ClothesFinder from '../pages/ClothesFinder';
 import BudgetPlanner from '../pages/BudgetPlanner';
 import TryOn from '../pages/TryOn';
+import StyleMakeover from '../pages/StyleMakeover';
+import OutfitPlanner from '../pages/OutfitPlanner';
+import WardrobeInsights from '../pages/WardrobeInsights';
 import Chatbot from '../pages/Chatbot';
 import SavedItems from '../pages/SavedItems';
 import Settings from '../pages/Settings';
 
 function RedirectIfAuth({ children }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, authInProgress } = useAuth();
   if (loading) return null;
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  if (isAuthenticated && !authInProgress) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -75,6 +78,9 @@ export default function AppRoutes() {
         <Route path="/shopping/assistant" element={<Navigate to="/shopping/finder" replace />} />
         <Route path="/shopping" element={<Navigate to="/shopping/budget" replace />} />
         <Route path="/try-on" element={<TryOn />} />
+        <Route path="/makeover" element={<StyleMakeover />} />
+        <Route path="/planner" element={<OutfitPlanner />} />
+        <Route path="/insights" element={<WardrobeInsights />} />
         <Route path="/chat" element={<Chatbot />} />
         <Route path="/saved" element={<SavedItems />} />
         <Route path="/settings" element={<Settings />} />
