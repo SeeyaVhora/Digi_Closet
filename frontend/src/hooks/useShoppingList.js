@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import api from '../services/api';
+import api, { getErrorMessage } from '../services/api';
 
 export default function useShoppingList() {
   const [lists, setLists] = useState([]);
@@ -13,7 +13,7 @@ export default function useShoppingList() {
       const { data } = await api.get('/shopping/saved');
       setLists(data.data.lists);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load shopping lists.');
+      setError(getErrorMessage(err, 'Failed to load shopping lists.'));
     } finally {
       setLoading(false);
     }
@@ -27,7 +27,7 @@ export default function useShoppingList() {
       setLists((prev) => [data.data.shoppingList, ...prev]);
       return data.data;
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to build shopping plan.');
+      setError(getErrorMessage(err, 'Failed to build a shopping plan.'));
       throw err;
     } finally {
       setPlanning(false);

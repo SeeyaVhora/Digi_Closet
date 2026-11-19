@@ -12,12 +12,12 @@ import Onboarding from '../pages/Onboarding';
 import Dashboard from '../pages/Dashboard';
 import Profile from '../pages/Profile';
 import Wardrobe from '../pages/Wardrobe';
-import Products from '../pages/Products';
 import OutfitRecommendations from '../pages/OutfitRecommendations';
 import FashionCritic from '../pages/FashionCritic';
 import ColorAnalyzer from '../pages/ColorAnalyzer';
-import OccasionStyling from '../pages/OccasionStyling';
-import ShoppingAssistant from '../pages/ShoppingAssistant';
+import SmartRecommendations from '../pages/SmartRecommendations';
+import ClothesFinder from '../pages/ClothesFinder';
+import BudgetPlanner from '../pages/BudgetPlanner';
 import TryOn from '../pages/TryOn';
 import Chatbot from '../pages/Chatbot';
 import SavedItems from '../pages/SavedItems';
@@ -61,12 +61,19 @@ export default function AppRoutes() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/wardrobe" element={<Wardrobe />} />
-        <Route path="/products" element={<Products />} />
         <Route path="/outfits" element={<OutfitRecommendations />} />
+        <Route path="/recommendations" element={<SmartRecommendations />} />
         <Route path="/fashion-critic" element={<FashionCritic />} />
         <Route path="/colors" element={<ColorAnalyzer />} />
-        <Route path="/styling/occasion" element={<OccasionStyling />} />
-        <Route path="/shopping" element={<ShoppingAssistant />} />
+        <Route path="/shopping/finder" element={<ClothesFinder />} />
+        <Route path="/shopping/budget" element={<BudgetPlanner />} />
+
+        {/* Old URLs from before the pages were consolidated */}
+        <Route path="/wardrobe/analyzer" element={<Navigate to="/wardrobe" replace />} />
+        <Route path="/styling/occasion" element={<Navigate to="/recommendations" replace />} />
+        <Route path="/products" element={<Navigate to="/shopping/finder" replace />} />
+        <Route path="/shopping/assistant" element={<Navigate to="/shopping/finder" replace />} />
+        <Route path="/shopping" element={<Navigate to="/shopping/budget" replace />} />
         <Route path="/try-on" element={<TryOn />} />
         <Route path="/chat" element={<Chatbot />} />
         <Route path="/saved" element={<SavedItems />} />

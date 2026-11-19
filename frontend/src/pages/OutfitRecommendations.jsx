@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { Wand2, RefreshCw } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Wand2, Shuffle, RefreshCw, Shirt } from 'lucide-react';
 import useOutfits from '../hooks/useOutfits';
 import useWardrobe from '../hooks/useWardrobe';
+import { getErrorMessage } from '../services/api';
 import { useToast } from '../components/Toast';
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
@@ -11,45 +13,66 @@ import Button from '../components/Button';
 import OutfitCard from '../components/OutfitCard';
 import EmptyState from '../components/EmptyState';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { OCCASIONS, STYLES, SEASONS } from '../constants/wardrobe';
 
-const OCCASIONS = ['Casual', 'College', 'Office', 'Interview', 'Date', 'Wedding', 'Party', 'Travel'];
-const STYLES = ['Minimalist', 'Casual', 'Classic', 'Formal', 'Sporty', 'Gen Z Streetwear'];
+const comboKey = (ids) => [...ids].sort().join('|');
 
 export default function OutfitRecommendations() {
+  const navigate = useNavigate();
   const { items, loading: wardrobeLoading } = useWardrobe();
-  const { recommend, recommending, saveOutfit, error } = useOutfits();
+  const { recommend, recommending, saveOutfit } = useOutfits({ autoFetch: false });
   const { showToast } = useToast();
-  const [form, setForm] = useState({ occasion: '', style: '', city: 'Bangalore', budget: '' });
-  const [result, setResult] = useState(null);
-  const [savedIds, setSavedIds] = useState([]);
 
-  const resolveItems = (itemIds) => items.filter((i) => itemIds.includes(String(i._id)));
+  const [form, setForm] = useState({ occasion: 'College', style: '', season: '', city: 'Bengaluru' });
+  const [colors, setColors] = useState([]);
+  const [outfits, setOutfits] = useState([]);
+  const [seenCombos, setSeenCombos] = useState([]);
+  const [weather, setWeather] = useState(null);
+  const [lastRequest, setLastRequest] = useState(null);
+  const [error, setError] = useState('');
+  const [savedKeys, setSavedKeys] = useState(new Set());
+  const [savingKey, setSavingKey] = useState(null);
 
-  const handleGenerate = async (e) => {
-    e?.preventDefault();
+  const itemsById = useMemo(() => new Map(items.map((i) => [i._id, i])), [items]);
+  const wardrobeColors = useMemo(
+    () => [...new Set(items.flatMap((i) => i.colors || []).map((c) => c.trim()))].sort(),
+    [items]
+  );
+
+  const set = (name) => (e) => setForm((prev) => ({ ...prev, [name]: e.target.value }));
+  const toggleColor = (color) => setColors((prev) => (prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]));
+
+  const generate = async (request, { alternatives = false } = {}) => {
+    setError('');
     try {
-      const data = await recommend(form);
-      setResult(data);
-    } catch {
-      showToast('Failed to generate recommendations.', 'error');
+      const data = await recommend({ ...request, excludeCombos: alternatives ? seenCombos : [] });
+      setOutfits(data.outfits);
+      setWeather(data.weather);
+      setLastRequest(request);
+      const newCombos = data.outfits.map((o) => o.itemIds);
+      setSeenCombos((prev) => (alternatives ? [...prev, ...newCombos] : newCombos));
+      setSavedKeys(new Set());
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not generate outfits.'));
     }
   };
 
-  const handleSave = async (outfit, idx) => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    generate({ ...form, colors });
+  };
+
+  const handleSave = async (outfit) => {
+    const key = comboKey(outfit.itemIds);
     try {
-      await saveOutfit({
-        title: outfit.title,
-        itemIds: outfit.itemIds,
-        occasion: form.occasion,
-        explanation: outfit.explanation,
-        styleTips: outfit.styleTips,
-        missingItems: outfit.missingItems,
-        source: 'outfit-recommendation',
-      });
-      setSavedIds((prev) => [...prev, idx]);
-      showToast('Outfit saved to your favorites.', 'success');
-    } catch {
-      showToast('Failed to save outfit.', 'error');
+      setSavingKey(key);
+      await saveOutfit({ ...outfit, source: 'outfit-recommendation' });
+      setSavedKeys((prev) => new Set(prev).add(key));
+      showToast('Outfit saved.', 'success');
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Could not save outfit.'), 'error');
+    } finally {
+      setSavingKey(null);
     }
   };
 
@@ -57,62 +80,100 @@ export default function OutfitRecommendations() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="AI Outfit Recommendations" subtitle="Get outfit ideas built from your actual wardrobe." />
+      <PageHeader
+        title="Outfit Generator"
+        subtitle="Complete looks put together from the pieces you already own."
+      />
 
-      {items.length === 0 && (
+      {items.length === 0 ? (
         <EmptyState
-          icon={Wand2}
-          title="Add wardrobe items first"
-          description="Outfit recommendations are built from clothes you own. Add a few items to your wardrobe to get started."
+          icon={Shirt}
+          title="Add some clothes first"
+          description="Outfits are built only from your own wardrobe. Add at least a top, a bottom and a pair of shoes."
+          actionLabel="Go to wardrobe"
+          onAction={() => navigate('/wardrobe')}
         />
-      )}
+      ) : (
+        <>
+          <Card className="section">
+            <form onSubmit={handleSubmit} className="generator-form">
+              <div className="form-grid generator-form__fields">
+                <Select label="Occasion" options={OCCASIONS} placeholder="Any occasion" value={form.occasion} onChange={set('occasion')} />
+                <Select label="Style" options={STYLES} placeholder="No preference" value={form.style} onChange={set('style')} />
+                <Select label="Season" options={SEASONS} placeholder="Any season" value={form.season} onChange={set('season')} />
+                <Input label="City for weather" placeholder="Leave empty to ignore" value={form.city} onChange={set('city')} />
+              </div>
 
-      <Card className="section">
-        <form onSubmit={handleGenerate} className="form-grid form-grid--2">
-          <Select label="Occasion" options={OCCASIONS} value={form.occasion} onChange={(e) => setForm({ ...form, occasion: e.target.value })} />
-          <Select label="Preferred Style" options={STYLES} value={form.style} onChange={(e) => setForm({ ...form, style: e.target.value })} />
-          <Input label="City (for weather)" placeholder="e.g. Bangalore" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
-          <Input label="Budget for missing items (₹)" type="number" placeholder="Optional" value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} />
-          <div style={{ gridColumn: '1 / -1' }}>
-            <Button type="submit" loading={recommending} disabled={items.length === 0}>
-              <Wand2 size={16} /> Generate Recommendations
-            </Button>
-          </div>
-        </form>
-      </Card>
+              {wardrobeColors.length > 0 && (
+                <div className="field">
+                  <span className="field__label">Colours to wear <span className="text-muted">(optional)</span></span>
+                  <div className="filter-bar filter-bar--compact">
+                    {wardrobeColors.map((color) => (
+                      <button
+                        type="button"
+                        key={color}
+                        onClick={() => toggleColor(color)}
+                        className={`filter-chip ${colors.includes(color) ? 'filter-chip--active' : ''}`}
+                      >
+                        {color}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-      {error && <div className="alert alert--error section">{error}</div>}
+              <div className="generator-form__actions">
+                <Button type="submit" loading={recommending && !lastRequest?.surprise}>
+                  <Wand2 size={16} /> Generate outfits
+                </Button>
+                <Button type="button" variant="outline" disabled={recommending} onClick={() => generate({ surprise: true, city: form.city })}>
+                  <Shuffle size={16} /> Surprise me
+                </Button>
+              </div>
+            </form>
+          </Card>
 
-      {result && (
-        <div className="section">
-          {result.weather && (
-            <p className="text-muted" style={{ fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)' }}>
-              Current weather: {result.weather}
-            </p>
-          )}
-          {result.mode === 'offline-fallback' && (
-            <div className="alert alert--info section">
-              Showing an offline heuristic suggestion — configure GEMINI_API_KEY for full AI-generated styling explanations.
+          {error && <div className="alert alert--error section">{error}</div>}
+
+          {recommending && (
+            <div className="generator-loading section">
+              <LoadingSpinner size="sm" />
+              <span>Styling {items.length} pieces from your wardrobe. This usually takes 5–15 seconds.</span>
             </div>
           )}
-          {result.outfits?.length === 0 ? (
-            <EmptyState title="No complete outfit could be built" description={result.note || 'Try adding more wardrobe items across different categories.'} />
-          ) : (
-            <div className="grid grid--2-lg">
-              {result.outfits?.map((outfit, idx) => (
-                <OutfitCard
-                  key={idx}
-                  outfit={{ ...outfit, items: resolveItems(outfit.itemIds) }}
-                  onSave={() => handleSave(outfit, idx)}
-                  saved={savedIds.includes(idx)}
-                />
-              ))}
-            </div>
+
+          {!recommending && outfits.length > 0 && (
+            <section className="section">
+              <div className="results-header">
+                <div>
+                  <h2 className="results-header__title">
+                    {lastRequest?.surprise ? 'Something different' : `${lastRequest?.occasion || 'Everyday'} looks`}
+                  </h2>
+                  {weather && <p className="results-header__note">Dressed for {weather}</p>}
+                </div>
+                <Button variant="outline" size="sm" onClick={() => generate(lastRequest, { alternatives: true })}>
+                  <RefreshCw size={14} /> Show alternatives
+                </Button>
+              </div>
+
+              <div className="grid grid--outfits">
+                {outfits.map((outfit) => {
+                  const key = comboKey(outfit.itemIds);
+                  return (
+                    <OutfitCard
+                      key={key}
+                      outfit={outfit}
+                      items={outfit.itemIds.map((id) => itemsById.get(id)).filter(Boolean)}
+                      onSave={handleSave}
+                      saved={savedKeys.has(key)}
+                      saving={savingKey === key}
+                    />
+                  );
+                })}
+              </div>
+            </section>
           )}
-          <Button variant="outline" onClick={handleGenerate} loading={recommending} style={{ marginTop: 'var(--space-4)' }}>
-            <RefreshCw size={16} /> Regenerate
-          </Button>
-        </div>
+        </>
       )}
     </div>
   );

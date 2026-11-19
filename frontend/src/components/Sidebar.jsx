@@ -1,8 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, User, Shirt, ShoppingBag, Sparkles,
-  Wand2, Palette, CalendarHeart, Wallet, Camera, Bot, Heart, Settings, LogOut, X,
-  Scissors,
+  LayoutDashboard, User, Shirt, Wand2, CloudSun, Palette, Sparkles, Bot,
+  Search, Wallet, Camera, Heart, Settings, LogOut, X, Scissors,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Avatar from './Avatar';
@@ -16,33 +15,28 @@ const navGroups = [
     ],
   },
   {
-    label: 'AI Styling',
+    label: 'Styling',
     items: [
-      { to: '/outfits', label: 'Outfit Recommendations', icon: Wand2 },
-      { to: '/styling/occasion', label: 'Occasion Styling', icon: CalendarHeart },
-      { to: '/colors', label: 'Color Analyzer', icon: Palette },
+      { to: '/outfits', label: 'Outfit Generator', icon: Wand2 },
+      { to: '/recommendations', label: 'Smart Picks', icon: CloudSun },
       { to: '/fashion-critic', label: 'Fashion Critic', icon: Sparkles },
-      { to: '/chat', label: 'Fashion Chatbot', icon: Bot },
+      { to: '/colors', label: 'Colour Palette', icon: Palette },
+      { to: '/chat', label: 'Stylist Chat', icon: Bot },
     ],
   },
   {
     label: 'Shopping',
     items: [
-      { to: '/products', label: 'Clothes Finder', icon: ShoppingBag },
-      { to: '/shopping', label: 'Budget Assistant', icon: Wallet },
-      { to: '/saved', label: 'Saved Items', icon: Heart },
+      { to: '/shopping/finder', label: 'Clothes Finder', icon: Search },
+      { to: '/shopping/budget', label: 'Budget Planner', icon: Wallet },
+      { to: '/saved', label: 'Saved', icon: Heart },
     ],
   },
   {
-    label: 'Try-On',
+    label: 'More',
     items: [
       { to: '/try-on', label: 'Virtual Try-On', icon: Camera },
-    ],
-  },
-  {
-    label: 'Account',
-    items: [
-      { to: '/profile', label: 'My Profile', icon: User },
+      { to: '/profile', label: 'Profile', icon: User },
       { to: '/settings', label: 'Settings & Privacy', icon: Settings },
     ],
   },

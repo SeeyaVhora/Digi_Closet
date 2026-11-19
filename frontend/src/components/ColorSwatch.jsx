@@ -5,14 +5,28 @@ const COLOR_MAP = {
   purple: '#8b5cf6', multi: 'linear-gradient(135deg, #f87171, #facc15, #4ade80, #60a5fa)',
 };
 
-function resolveColor(name) {
-  return COLOR_MAP[name?.toLowerCase()] || '#9ca3af';
+const EXTRA_COLORS = {
+  'off-white': '#f4f1ea', cream: '#f3ead7', ivory: '#fbf7ec', camel: '#c19a6b', tan: '#c8a27c',
+  khaki: '#bfae86', charcoal: '#3a3a3a', burgundy: '#701a31', mustard: '#d9a62e', rust: '#a8502b',
+  denim: '#4f6d8f', multi: COLOR_MAP.multi,
+};
+
+// Wardrobe colours are free text ("Light Blue", "Off-white"), so try our map,
+// then the browser's CSS colour names, then the last word ("dark olive" -> olive).
+function resolveColor(name = '') {
+  const key = name.trim().toLowerCase();
+  if (COLOR_MAP[key] || EXTRA_COLORS[key]) return COLOR_MAP[key] || EXTRA_COLORS[key];
+  const compact = key.replace(/[\s-]+/g, '');
+  if (compact && typeof CSS !== 'undefined' && CSS.supports('color', compact)) return compact;
+  const lastWord = key.split(/[\s-]+/).pop();
+  if (lastWord !== key) return resolveColor(lastWord);
+  return '#c9c3b8';
 }
 
 export function ColorSwatch({ color, showLabel = true }) {
   return (
     <span className="color-swatch">
-      <span className="color-swatch__dot" style={{ background: resolveColor(color) }} />
+      <span className="color-swatch__dot" style={{ background: resolveColor(color) }} title={color} />
       {showLabel && <span className="color-swatch__label">{color}</span>}
     </span>
   );

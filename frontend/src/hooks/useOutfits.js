@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import api from '../services/api';
 
-export default function useOutfits() {
+export default function useOutfits({ autoFetch = true } = {}) {
   const [saved, setSaved] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(autoFetch);
   const [recommending, setRecommending] = useState(false);
   const [error, setError] = useState(null);
 
@@ -49,7 +49,9 @@ export default function useOutfits() {
     setSaved((prev) => prev.filter((o) => o._id !== id));
   }, []);
 
-  useEffect(() => { fetchSaved(); }, [fetchSaved]);
+  useEffect(() => {
+    if (autoFetch) fetchSaved();
+  }, [autoFetch, fetchSaved]);
 
   return { saved, loading, recommending, error, recommend, saveOutfit, toggleFavorite, deleteOutfit, fetchSaved };
 }

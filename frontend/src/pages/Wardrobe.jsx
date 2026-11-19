@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Shirt, Search } from 'lucide-react';
 import useWardrobe from '../hooks/useWardrobe';
+import { getErrorMessage } from '../services/api';
 import { useToast } from '../components/Toast';
 import PageHeader from '../components/PageHeader';
 import Button from '../components/Button';
@@ -8,225 +9,282 @@ import Input from '../components/Input';
 import Select from '../components/Select';
 import Modal from '../components/Modal';
 import ClothingCard from '../components/ClothingCard';
-import UploadDropzone from '../components/UploadDropzone';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import ErrorMessage from '../components/ErrorMessage';
 import ConfirmDialog from '../components/ConfirmDialog';
+import WardrobeItemForm from '../components/WardrobeItemForm';
+import { CATEGORIES, SEASONS, OCCASIONS, splitList } from '../constants/wardrobe';
 
-const CATEGORIES = ['Tops', 'Shirts', 'T-Shirts', 'Trousers', 'Jeans', 'Dresses', 'Footwear', 'Outerwear', 'Accessories'];
-const SORT_OPTIONS = [{ value: '', label: 'Newest first' }, { value: 'oldest', label: 'Oldest first' }, { value: 'name', label: 'Name (A-Z)' }, { value: 'category', label: 'Category' }];
+const emptyItemForm = {
+  name: '', category: '', type: '', primaryColor: '', secondaryColor: '', pattern: '',
+  style: '', size: '', brand: '', season: [], occasions: '', notes: '', imageUrl: '',
+};
 
-const initialForm = { name: '', category: '', colors: '', brand: '', imageUrl: '', style: '', occasions: '', notes: '' };
+function itemToForm(item) {
+  return {
+    name: item.name || '',
+    category: item.category || '',
+    type: item.type || '',
+    primaryColor: item.colors?.[0] || '',
+    secondaryColor: item.colors?.[1] || '',
+    pattern: item.pattern || '',
+    style: item.style || '',
+    size: item.size || '',
+    brand: item.brand || '',
+    season: item.season || [],
+    occasions: (item.occasions || []).join(', '),
+    notes: item.notes || '',
+    imageUrl: item.imageUrl || '',
+  };
+}
+
+const SORT_OPTIONS = [
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'name', label: 'Name (A–Z)' },
+  { value: 'category', label: 'Category' },
+];
+
+function formToPayload(form) {
+  return {
+    name: form.name.trim(),
+    category: form.category,
+    type: form.type.trim() || null,
+    colors: [form.primaryColor, form.secondaryColor].map((c) => c.trim()).filter(Boolean),
+    pattern: form.pattern.trim() || null,
+    style: form.style || null,
+    size: form.size.trim() || null,
+    brand: form.brand.trim() || null,
+    season: form.season,
+    occasions: splitList(form.occasions),
+    notes: form.notes.trim(),
+  };
+}
 
 export default function Wardrobe() {
-  const { items, loading, error, adding, addItem, updateItem, deleteItem, uploadImage, classifyImage, fetchItems } = useWardrobe();
+  const { items, loading, error, addItem, updateItem, deleteItem, uploadImage, classifyImage, fetchItems } = useWardrobe({ autoFetch: false });
   const { showToast } = useToast();
-  const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState(initialForm);
-  const [formError, setFormError] = useState('');
-  const [activeFilter, setActiveFilter] = useState('');
+
+  const [filters, setFilters] = useState({ category: '', season: '', occasion: '', sort: '' });
   const [search, setSearch] = useState('');
-  const [sort, setSort] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [form, setForm] = useState(emptyItemForm);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
-  const [classifying, setClassifying] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [aiStatus, setAiStatus] = useState(null);
+  const [formError, setFormError] = useState('');
+  const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const hasFilters = Boolean(search || filters.category || filters.season || filters.occasion);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchItems({
+        search: search.trim() || undefined,
+        category: filters.category || undefined,
+        season: filters.season || undefined,
+        occasion: filters.occasion || undefined,
+        sort: filters.sort || undefined,
+      });
+    }, search ? 300 : 0);
+    return () => clearTimeout(timer);
+  }, [search, filters, fetchItems]);
+
+  const setFilter = (name, value) => setFilters((prev) => ({ ...prev, [name]: value }));
+
+  const openModal = (item = null) => {
+    setEditingItem(item);
+    setForm(item ? itemToForm(item) : emptyItemForm);
+    setImagePreview(item?.imageUrl || '');
+    setImageFile(null);
+    setAiStatus(null);
     setFormError('');
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    if (saving) return;
+    setModalOpen(false);
   };
 
   const handleFileSelect = async (file) => {
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
+    setAiStatus(null);
+    setAnalyzing(true);
     try {
-      setClassifying(true);
-      const suggestion = await classifyImage(file);
-      if (suggestion.category) {
-        setForm((prev) => ({
-          ...prev,
-          category: suggestion.category || prev.category,
-          colors: suggestion.colors?.join(', ') || prev.colors,
-          style: suggestion.style || prev.style,
-        }));
-        showToast(
-          suggestion.mode === 'ai' ? 'AI suggested a category and colors — review before saving.' : 'Could not run AI classification (offline mode).',
-          suggestion.mode === 'ai' ? 'success' : 'info'
-        );
-      }
-    } catch {
-      showToast('AI classification failed. You can still fill in details manually.', 'info');
+      const detected = await classifyImage(file);
+      setForm((prev) => ({
+        ...prev,
+        name: detected.name || prev.name,
+        category: detected.category || prev.category,
+        type: detected.type || prev.type,
+        primaryColor: detected.colors[0] || prev.primaryColor,
+        secondaryColor: detected.colors[1] || '',
+        pattern: detected.pattern || prev.pattern,
+        style: detected.style || prev.style,
+        season: detected.season.length ? detected.season : prev.season,
+        occasions: detected.occasions.length ? detected.occasions.join(', ') : prev.occasions,
+      }));
+      setAiStatus({ type: 'success' });
+    } catch (err) {
+      setAiStatus({ type: 'error', message: getErrorMessage(err, 'Gemini could not analyse this photo.') });
     } finally {
-      setClassifying(false);
+      setAnalyzing(false);
     }
   };
 
-  const resetForm = () => {
-    setForm(initialForm);
+  const handleRemoveImage = () => {
     setImageFile(null);
     setImagePreview('');
-    setEditingId(null);
-    setFormError('');
+    setForm((prev) => ({ ...prev, imageUrl: '' }));
+    setAiStatus(null);
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.name || !form.category) {
+    e?.preventDefault();
+    if (!form.name.trim() || !form.category) {
       setFormError('Name and category are required.');
       return;
     }
+    setSaving(true);
+    setFormError('');
     try {
-      let imageUrl = form.imageUrl;
+      const payload = formToPayload(form);
       if (imageFile) {
-        const result = await uploadImage(imageFile);
-        imageUrl = result.imageUrl;
+        const uploaded = await uploadImage(imageFile);
+        payload.imageUrl = uploaded.imageUrl;
+        payload.imagePath = uploaded.imagePath;
+      } else if (!form.imageUrl) {
+        payload.imageUrl = null;
       }
-      const payload = {
-        ...form,
-        imageUrl,
-        colors: form.colors ? form.colors.split(',').map((c) => c.trim()).filter(Boolean) : [],
-        occasions: form.occasions ? form.occasions.split(',').map((c) => c.trim()).filter(Boolean) : [],
-      };
-      if (editingId) {
-        await updateItem(editingId, payload);
+      if (aiStatus?.type === 'success') {
+        payload.aiSuggested = { category: form.category, colors: payload.colors, style: payload.style, accepted: true };
+      }
+
+      if (editingItem) {
+        await updateItem(editingItem._id, payload);
         showToast('Item updated.', 'success');
       } else {
         await addItem(payload);
-        showToast('Item added to wardrobe.', 'success');
+        showToast(`${payload.name} added to your wardrobe.`, 'success');
       }
-      resetForm();
-      setShowModal(false);
+      setModalOpen(false);
     } catch (err) {
-      setFormError(err.response?.data?.message || 'Failed to save item.');
+      setFormError(getErrorMessage(err, 'Could not save this item.'));
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleEdit = (item) => {
-    setEditingId(item._id);
-    setForm({
-      name: item.name, category: item.category, colors: (item.colors || []).join(', '),
-      brand: item.brand || '', imageUrl: item.imageUrl || '', style: item.style || '',
-      occasions: (item.occasions || []).join(', '), notes: item.notes || '',
-    });
-    setImagePreview(item.imageUrl || '');
-    setShowModal(true);
-  };
-
   const handleDelete = async () => {
-    if (!deleteTarget) return;
     try {
       await deleteItem(deleteTarget._id);
       showToast('Item removed.', 'success');
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Could not remove this item.'), 'error');
     } finally {
       setDeleteTarget(null);
     }
   };
 
-  const handleFilter = (category) => {
-    const newFilter = category === activeFilter ? '' : category;
-    setActiveFilter(newFilter);
-    fetchItems({ category: newFilter || undefined, search: search || undefined, sort: sort || undefined });
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchItems({ category: activeFilter || undefined, search: search || undefined, sort: sort || undefined });
-  };
-
-  const handleSortChange = (e) => {
-    setSort(e.target.value);
-    fetchItems({ category: activeFilter || undefined, search: search || undefined, sort: e.target.value || undefined });
-  };
-
-  if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorMessage message={error} onRetry={() => fetchItems()} />;
-
   return (
     <div className="animate-fade-in">
       <PageHeader
-        title="My Wardrobe"
-        subtitle="Manage your clothing collection."
-        action={<Button onClick={() => { resetForm(); setShowModal(true); }}><Plus size={16} /> Add Item</Button>}
+        title="Wardrobe"
+        subtitle={loading && !items.length ? 'Loading your pieces…' : `${items.length} ${items.length === 1 ? 'piece' : 'pieces'}${hasFilters ? ' matching your filters' : ''}`}
+        action={<Button onClick={() => openModal()}><Plus size={16} /> Add item</Button>}
       />
 
-      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
-        <Input placeholder="Search wardrobe..." icon={Search} value={search} onChange={(e) => setSearch(e.target.value)} style={{ flex: 1, marginBottom: 0 }} />
-        <Select options={SORT_OPTIONS} value={sort} onChange={handleSortChange} placeholder="Sort by" style={{ minWidth: '10rem', marginBottom: 0 }} />
-      </form>
+      <div className="wardrobe-toolbar">
+        <Input
+          placeholder="Search by name, colour, brand…"
+          icon={Search}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="wardrobe-toolbar__search"
+          aria-label="Search wardrobe"
+        />
+        <Select options={SEASONS} placeholder="Any season" value={filters.season} onChange={(e) => setFilter('season', e.target.value)} aria-label="Season" />
+        <Select options={OCCASIONS} placeholder="Any occasion" value={filters.occasion} onChange={(e) => setFilter('occasion', e.target.value)} aria-label="Occasion" />
+        <Select options={SORT_OPTIONS} placeholder="Newest first" value={filters.sort} onChange={(e) => setFilter('sort', e.target.value)} aria-label="Sort" />
+      </div>
 
       <div className="filter-bar">
-        <button onClick={() => handleFilter('')} className={`filter-chip ${!activeFilter ? 'filter-chip--active' : ''}`}>All</button>
+        <button onClick={() => setFilter('category', '')} className={`filter-chip ${!filters.category ? 'filter-chip--active' : ''}`}>All</button>
         {CATEGORIES.map((cat) => (
-          <button key={cat} onClick={() => handleFilter(cat)} className={`filter-chip ${activeFilter === cat ? 'filter-chip--active' : ''}`}>{cat}</button>
+          <button
+            key={cat}
+            onClick={() => setFilter('category', filters.category === cat ? '' : cat)}
+            className={`filter-chip ${filters.category === cat ? 'filter-chip--active' : ''}`}
+          >
+            {cat}
+          </button>
         ))}
       </div>
 
-      {items.length === 0 ? (
-        <EmptyState
-          icon={Shirt}
-          title="No items found"
-          description="Add your first clothing item to start building your digital wardrobe."
-          actionLabel="Add Item"
-          onAction={() => { resetForm(); setShowModal(true); }}
-        />
+      {error ? (
+        <ErrorMessage message={error} onRetry={() => setFilters((prev) => ({ ...prev }))} />
+      ) : loading && !items.length ? (
+        <LoadingSpinner />
+      ) : items.length === 0 ? (
+        hasFilters ? (
+          <EmptyState icon={Search} title="Nothing matches" description="Try a different search or clear the filters." />
+        ) : (
+          <EmptyState
+            icon={Shirt}
+            title="Your wardrobe is empty"
+            description="Add a photo of a piece you own and Gemini will tag its category, colours and style for you."
+            actionLabel="Add your first item"
+            onAction={() => openModal()}
+          />
+        )
       ) : (
         <div className="grid grid--cards">
           {items.map((item) => (
-            <ClothingCard key={item._id} item={item} onEdit={handleEdit} onDelete={setDeleteTarget} />
+            <ClothingCard key={item._id} item={item} onClick={openModal} onEdit={openModal} onDelete={setDeleteTarget} />
           ))}
         </div>
       )}
 
       <Modal
-        isOpen={showModal}
-        onClose={() => { setShowModal(false); resetForm(); }}
-        title={editingId ? 'Edit Item' : 'Add Wardrobe Item'}
+        isOpen={modalOpen}
+        onClose={closeModal}
+        title={editingItem ? 'Edit item' : 'Add to wardrobe'}
+        size="xl"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setShowModal(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} loading={adding}>{editingId ? 'Save Changes' : 'Add Item'}</Button>
+            <Button variant="ghost" onClick={closeModal} disabled={saving}>Cancel</Button>
+            <Button onClick={handleSubmit} loading={saving} disabled={analyzing}>
+              {editingItem ? 'Save changes' : 'Save item'}
+            </Button>
           </>
         }
       >
-        <WardrobeForm
-          form={form} handleChange={handleChange} formError={formError}
-          imagePreview={imagePreview} onFileSelect={handleFileSelect}
-          onRemoveImage={() => { setImageFile(null); setImagePreview(''); setForm({ ...form, imageUrl: '' }); }}
-          classifying={classifying} onSubmit={handleSubmit}
+        <WardrobeItemForm
+          form={form}
+          onChange={(name, value) => { setForm((prev) => ({ ...prev, [name]: value })); setFormError(''); }}
+          imagePreview={imagePreview}
+          onFileSelect={handleFileSelect}
+          onRemoveImage={handleRemoveImage}
+          analyzing={analyzing}
+          aiStatus={aiStatus}
+          error={formError}
+          onSubmit={handleSubmit}
         />
       </Modal>
 
       <ConfirmDialog
-        isOpen={!!deleteTarget}
+        isOpen={Boolean(deleteTarget)}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         title="Remove item?"
-        message={`Remove "${deleteTarget?.name}" from your wardrobe? This cannot be undone.`}
+        message={`Remove "${deleteTarget?.name}" from your wardrobe? Saved outfits that use it will lose this piece.`}
         confirmLabel="Remove"
       />
     </div>
-  );
-}
-
-function WardrobeForm({ form, handleChange, formError, imagePreview, onFileSelect, onRemoveImage, classifying, onSubmit }) {
-  return (
-    <form onSubmit={onSubmit} className="auth-card__form">
-      <UploadDropzone onFileSelect={onFileSelect} preview={imagePreview} onRemove={onRemoveImage} label="Upload a photo for AI-assisted details" />
-      {classifying && <p className="text-muted" style={{ fontSize: 'var(--text-xs)' }}>Analyzing image…</p>}
-      <Input label="Item Name" name="name" placeholder="e.g. Blue Oxford Shirt" value={form.name} onChange={handleChange} />
-      <Select label="Category" name="category" options={CATEGORIES} value={form.category} onChange={handleChange} />
-      <Input label="Colors (comma separated)" name="colors" placeholder="e.g. Navy, White" value={form.colors} onChange={handleChange} />
-      <Input label="Style" name="style" placeholder="e.g. Casual" value={form.style} onChange={handleChange} />
-      <Input label="Occasions (comma separated)" name="occasions" placeholder="e.g. Office, Casual" value={form.occasions} onChange={handleChange} />
-      <Input label="Brand" name="brand" placeholder="e.g. Levi's" value={form.brand} onChange={handleChange} />
-      <div className="field">
-        <label className="field__label">Notes</label>
-        <textarea name="notes" rows={3} placeholder="Any additional notes..." value={form.notes} onChange={handleChange} className="input" />
-      </div>
-      {formError && <div className="alert alert--error">{formError}</div>}
-    </form>
   );
 }

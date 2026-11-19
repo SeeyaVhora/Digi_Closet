@@ -5,7 +5,7 @@
 }
 .clothing-card__image-wrap {
   aspect-ratio: 3 / 4;
-  background: var(--bg-surface);
+  background: var(--bg-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -34,10 +34,15 @@
   gap: var(--space-2);
   margin-top: var(--space-1);
 }
-.clothing-card__color {
+.clothing-card__meta { justify-content: space-between; }
+.clothing-card__details {
+  overflow: hidden;
   font-size: var(--text-xs);
   color: var(--text-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
+.clothing-card__colors { display: flex; flex-shrink: 0; gap: 2px; }
 .clothing-card__actions {
   position: absolute;
   top: var(--space-2);
@@ -47,15 +52,23 @@
   opacity: 0;
   transition: opacity var(--transition-base);
 }
-.clothing-card:hover .clothing-card__actions { opacity: 1; }
+.clothing-card:hover .clothing-card__actions,
+.clothing-card:focus-within .clothing-card__actions { opacity: 1; }
+@media (hover: none) {
+  .clothing-card__actions { opacity: 1; }
+}
 .clothing-card__action-btn {
-  background: rgba(10, 10, 13, 0.75);
-  backdrop-filter: blur(4px);
-  border: none;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   border-radius: var(--radius-md);
   padding: var(--space-1-5, 0.375rem);
   display: flex;
 }
-.clothing-card__action-btn:hover { color: var(--text-primary); background: rgba(10, 10, 13, 0.9); }
+.clothing-card__action-btn:hover { color: var(--text-primary); background: #FFFFFF; }
 .clothing-card__action-btn--danger:hover { color: var(--color-danger); }
+.clothing-card__colors .color-swatch__dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-width: 1px;
+}

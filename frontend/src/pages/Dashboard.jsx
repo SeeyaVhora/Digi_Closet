@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Heart, Shirt, Camera, UserCircle, Plus, ArrowRight, Wand2,
-  MessageSquare, Palette, CalendarHeart, Wallet, Bot, ShoppingBag,
+  Heart, Shirt, Camera, UserCircle, ArrowRight, Wand2, Palette, Wallet, Bot, Search, CloudSun,
   Cloud, Sun, CloudRain, Snowflake, CloudLightning, CloudDrizzle, Wind,
-  Thermometer, MapPin, BarChart3, TrendingUp,
+  Thermometer, MapPin, Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import useWardrobe from '../hooks/useWardrobe';
@@ -13,17 +12,18 @@ import useWeather from '../hooks/useWeather';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import EmptyState from '../components/EmptyState';
+import ClothingCard from '../components/ClothingCard';
+import { ColorSwatch } from '../components/ColorSwatch';
 
 const quickLinks = [
-  { to: '/outfits', label: 'Outfit Recommendations', icon: Wand2 },
-  { to: '/wardrobe', label: 'Digital Wardrobe', icon: Shirt },
-  { to: '/fashion-critic', label: 'Fashion Critic', icon: MessageSquare },
-  { to: '/products', label: 'Smart Clothes Finder', icon: ShoppingBag },
-  { to: '/shopping', label: 'Budget Assistant', icon: Wallet },
+  { to: '/outfits', label: 'Outfit Generator', icon: Wand2 },
+  { to: '/recommendations', label: 'Smart Picks', icon: CloudSun },
+  { to: '/fashion-critic', label: 'Fashion Critic', icon: Sparkles },
+  { to: '/colors', label: 'Colour Palette', icon: Palette },
+  { to: '/chat', label: 'Stylist Chat', icon: Bot },
+  { to: '/shopping/finder', label: 'Clothes Finder', icon: Search },
+  { to: '/shopping/budget', label: 'Budget Planner', icon: Wallet },
   { to: '/try-on', label: 'Virtual Try-On', icon: Camera },
-  { to: '/styling/occasion', label: 'Occasion Styling', icon: CalendarHeart },
-  { to: '/colors', label: 'Color Analyzer', icon: Palette },
-  { to: '/chat', label: 'Fashion Chatbot', icon: Bot },
 ];
 
 const WEATHER_ICONS = {
@@ -87,7 +87,7 @@ function WeatherWidget({ weather, loading, onRefresh, city }) {
         <span className="weather-widget__detail"><Wind size={12} /> {weather.windSpeedKmh} km/h</span>
         <span className="weather-widget__detail"><Thermometer size={12} /> Humidity {weather.humidity}%</span>
       </div>
-      <p className="weather-widget__tip">💡 {tip}</p>
+      <p className="weather-widget__tip">{tip}</p>
     </Card>
   );
 }
@@ -112,10 +112,10 @@ function WardrobeAnalytics({ items }) {
 
   return (
     <Card className="section">
-      <h2 className="section__title"><BarChart3 size={18} style={{ verticalAlign: 'middle', marginRight: 'var(--space-2)' }} />Wardrobe Analytics</h2>
+      <h2 className="section__title">Your wardrobe at a glance</h2>
       <div className="analytics-grid">
         <div>
-          <h3 className="analytics-subtitle">Category Distribution</h3>
+          <h3 className="analytics-subtitle">By category</h3>
           <div className="analytics-bars">
             {sortedCategories.map(([cat, count]) => (
               <div key={cat} className="analytics-bar-row">
@@ -129,18 +129,18 @@ function WardrobeAnalytics({ items }) {
           </div>
         </div>
         <div>
-          <h3 className="analytics-subtitle">Top Colors</h3>
+          <h3 className="analytics-subtitle">Top colours</h3>
           <div className="analytics-color-chips">
             {topColors.map(([color, count]) => (
               <span key={color} className="analytics-color-chip">
-                <span className="analytics-color-dot" style={{ background: color.toLowerCase() }} />
+                <ColorSwatch color={color} showLabel={false} />
                 {color} <span className="text-muted">({count})</span>
               </span>
             ))}
           </div>
           {gapCategories.length > 0 && (
             <div style={{ marginTop: 'var(--space-4)' }}>
-              <h3 className="analytics-subtitle"><TrendingUp size={14} style={{ verticalAlign: 'middle', marginRight: 'var(--space-1)' }} />Wardrobe Gaps</h3>
+              <h3 className="analytics-subtitle">Gaps</h3>
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
                 You're missing: {gapCategories.join(', ')}. Adding these will help AI build better outfits.
               </p>
@@ -158,11 +158,11 @@ export default function Dashboard() {
   const { items, loading: wardrobeLoading } = useWardrobe();
   const { saved, loading: outfitsLoading } = useOutfits();
   const { weather, loading: weatherLoading, fetchWeather } = useWeather();
-  const [weatherCity, setWeatherCity] = useState('Bangalore');
+  const [weatherCity, setWeatherCity] = useState('Bengaluru');
 
   // Auto-detect location on mount for weather, defaulting to Bangalore
   useEffect(() => {
-    const defaultCity = 'Bangalore';
+    const defaultCity = 'Bengaluru';
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
@@ -192,10 +192,10 @@ export default function Dashboard() {
 
   const totalColors = new Set(items.flatMap((i) => i.colors || [])).size;
   const statCards = [
-    { icon: Shirt, label: 'Wardrobe Items', value: wardrobeLoading ? '—' : String(items.length), color: 'var(--color-info)' },
-    { icon: Heart, label: 'Saved Outfits', value: outfitsLoading ? '—' : String(saved.length), color: 'var(--accent-violet)' },
-    { icon: Palette, label: 'Unique Colors', value: wardrobeLoading ? '—' : String(totalColors), color: 'var(--color-success)' },
-    { icon: UserCircle, label: 'Style Profile', value: user?.onboardingCompleted ? 'Complete' : 'Not set up', color: 'var(--color-warning)' },
+    { icon: Shirt, label: 'Wardrobe items', value: wardrobeLoading ? '—' : String(items.length) },
+    { icon: Heart, label: 'Saved outfits', value: outfitsLoading ? '—' : String(saved.length) },
+    { icon: Palette, label: 'Colours owned', value: wardrobeLoading ? '—' : String(totalColors) },
+    { icon: UserCircle, label: 'Style profile', value: user?.onboardingCompleted ? 'Complete' : 'Not set' },
   ];
 
   return (
@@ -211,12 +211,12 @@ export default function Dashboard() {
           weather={weather}
           loading={weatherLoading}
           city={weatherCity}
-          onRefresh={() => fetchWeather(weatherCity || 'Bangalore')}
+          onRefresh={() => fetchWeather(weatherCity || 'Bengaluru')}
         />
         <div className="grid grid--stats">
-          {statCards.map(({ icon: Icon, label, value, color }) => (
+          {statCards.map(({ icon: Icon, label, value }) => (
             <Card key={label} className="stat-card">
-              <div className="stat-card__icon" style={{ background: `${color}22`, color }}>
+              <div className="stat-card__icon">
                 <Icon size={20} />
               </div>
               <div style={{ minWidth: 0 }}>
@@ -228,33 +228,22 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="section">
-        <h2 className="section__title">Quick Actions</h2>
-        <div className="quick-actions">
-          <Button variant="outline" onClick={() => navigate('/wardrobe')}>
-            <Plus size={16} /> Add Wardrobe Item
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/outfits')}>
-            <Wand2 size={16} /> Get Outfit Ideas
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/profile')}>
-            <UserCircle size={16} /> Update Profile
-          </Button>
-          {weather?.found && (
-            <Button variant="outline" onClick={() => navigate('/outfits')}>
-              <Sun size={16} /> Weather-Based Outfit
-            </Button>
-          )}
-        </div>
-      </div>
+      {weather?.found && items.length > 0 && (
+        <Card className="dashboard-cta section">
+          <div>
+            <h2 className="dashboard-cta__title">What to wear today</h2>
+            <p className="text-muted">Picks from your wardrobe for {weather.temperatureC}°C and {weather.condition.toLowerCase()} in {weather.city}.</p>
+          </div>
+          <Button onClick={() => navigate('/recommendations')}>See today's picks <ArrowRight size={16} /></Button>
+        </Card>
+      )}
 
       {/* Wardrobe Analytics */}
       {!wardrobeLoading && <WardrobeAnalytics items={items} />}
 
       {/* Recently Added */}
       <div className="section">
-        <h2 className="section__title">Recently Added</h2>
+        <h2 className="section__title">Recently added</h2>
         {recentItems.length === 0 ? (
           <EmptyState
             icon={Shirt}
@@ -266,19 +255,7 @@ export default function Dashboard() {
         ) : (
           <div className="grid grid--cards">
             {recentItems.map((item) => (
-              <Card key={item._id} padding={false} hover style={{ overflow: 'hidden' }}>
-                <div className="clothing-card__image-wrap">
-                  {item.imageUrl ? (
-                    <img src={item.imageUrl} alt={item.name} className="clothing-card__image" />
-                  ) : (
-                    <Shirt size={28} color="var(--text-muted)" />
-                  )}
-                </div>
-                <div className="clothing-card__body">
-                  <p className="clothing-card__name">{item.name}</p>
-                  <p className="clothing-card__category">{item.category}</p>
-                </div>
-              </Card>
+              <ClothingCard key={item._id} item={item} onClick={() => navigate('/wardrobe')} />
             ))}
           </div>
         )}
@@ -286,7 +263,7 @@ export default function Dashboard() {
 
       {/* Explore All Features */}
       <div className="section">
-        <h2 className="section__title">Explore All Features</h2>
+        <h2 className="section__title">Explore</h2>
         <div className="feature-grid">
           {quickLinks.map(({ to, label, icon: Icon }) => (
             <Card key={to} hover className="feature-tile" onClick={() => navigate(to)} style={{ cursor: 'pointer' }}>
