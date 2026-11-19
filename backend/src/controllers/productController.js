@@ -1,58 +1,31 @@
-const Product = require('../models/Product');
 const SavedProduct = require('../models/SavedProduct');
-const productSearchService = require('../services/productSearchService');
 
-// GET /api/products — uses productSearchService (dev catalog unless a real
-// provider is configured), never fabricates listings.
-const getProducts = async (req, res, next) => {
+const isHttpUrl = (value) => {
   try {
-    const { category, minPrice, maxPrice, color, style, brand, occasion, query, sort } = req.query;
-    const result = await productSearchService.search({
-      query, category, brand, color, style, occasion, minPrice, maxPrice, sort,
-    });
-    res.json({ success: true, data: result });
-  } catch (error) {
-    next(error);
+    return ['http:', 'https:'].includes(new URL(value).protocol);
+  } catch {
+    return false;
   }
 };
 
-// GET /api/products/:id
-const getProductById = async (req, res, next) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ success: false, message: 'Product not found.' });
-    }
-    res.json({ success: true, data: { product } });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// POST /api/products/saved — save a product for later
+// POST /api/products/saved — bookmark a product from a live search result
 const saveProduct = async (req, res, next) => {
   try {
-    const { productId } = req.body;
-    const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({ success: false, message: 'Product not found.' });
+    const { id, title, price, merchant, imageUrl, link } = req.body;
+    if (!id || !title || !isHttpUrl(link)) {
+      return res.status(400).json({ success: false, message: 'A product id, title and valid link are required.' });
     }
 
     const saved = await SavedProduct.findOneAndUpdate(
-      { owner: req.user._id, product: product._id },
+      { owner: req.user._id, externalId: String(id) },
       {
-        owner: req.user._id,
-        product: product._id,
-        snapshot: {
-          name: product.name,
-          brand: product.brand,
-          price: product.price,
-          imageUrl: product.imageUrl,
-          color: product.color,
-          category: product.category,
-        },
+        title: String(title).slice(0, 200),
+        price: Number.isFinite(Number(price)) ? Number(price) : null,
+        merchant: String(merchant || '').slice(0, 80),
+        imageUrl: isHttpUrl(imageUrl) ? imageUrl : null,
+        link,
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
     res.status(201).json({ success: true, message: 'Product saved.', data: { saved } });
@@ -74,24 +47,14 @@ const getSavedProducts = async (req, res, next) => {
 // DELETE /api/products/saved/:id
 const unsaveProduct = async (req, res, next) => {
   try {
-    const saved = await SavedProduct.findById(req.params.id);
+    const saved = await SavedProduct.findOneAndDelete({ _id: req.params.id, owner: req.user._id });
     if (!saved) {
       return res.status(404).json({ success: false, message: 'Saved product not found.' });
     }
-    if (String(saved.owner) !== String(req.user._id)) {
-      return res.status(403).json({ success: false, message: 'You do not have permission to remove this.' });
-    }
-    await saved.deleteOne();
     res.json({ success: true, message: 'Removed from saved products.' });
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = {
-  getProducts,
-  getProductById,
-  saveProduct,
-  getSavedProducts,
-  unsaveProduct,
-};
+module.exports = { saveProduct, getSavedProducts, unsaveProduct };

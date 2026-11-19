@@ -1,66 +1,81 @@
-const Product = require('../models/Product');
+const ClothingItem = require('../models/ClothingItem');
 const ShoppingList = require('../models/ShoppingList');
 const productSearchService = require('../services/productSearchService');
+const stylistService = require('../services/stylistService');
 
-// POST /api/shopping/plan — builds a budget-aware shopping list from the
-// real product catalog. Prioritizes versatile, lower-cost items so more
-// categories fit the budget; never invents prices or discounts.
+// POST /api/shopping/assistant/search — natural-language product finder
+const assistantSearch = async (req, res, next) => {
+  try {
+    const query = String(req.body.query || '').trim();
+    if (query.length < 3) {
+      return res.status(400).json({
+        success: false,
+        message: 'Describe what you are looking for, e.g. "black oversized t-shirt under ₹800".',
+      });
+    }
+    if (query.length > 300) {
+      return res.status(400).json({ success: false, message: 'Please keep the request under 300 characters.' });
+    }
+
+    const filters = await stylistService.parseShoppingQuery(query);
+    const search = await productSearchService.search({
+      query: filters.searchQuery,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+    });
+
+    res.json({ success: true, data: { query, filters, ...search } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/shopping/plan — AI budget plan, saved as a shopping list
 const plan = async (req, res, next) => {
   try {
-    const { budget, categories, style, colors, occasion, brands } = req.body;
+    const budget = Math.round(Number(req.body.budget));
+    const { goal, style, priorities } = req.body;
+    const categories = Array.isArray(req.body.categories) ? req.body.categories.slice(0, 10) : [];
 
-    if (!budget || budget <= 0) {
-      return res.status(400).json({ success: false, message: 'A positive budget is required.' });
+    if (!Number.isFinite(budget) || budget < 200 || budget > 1000000) {
+      return res.status(400).json({ success: false, message: 'Enter a budget between ₹200 and ₹10,00,000.' });
     }
 
-    const filter = {};
-    if (categories && categories.length) filter.category = { $in: categories };
-    if (style) filter.style = { $regex: `^${style}$`, $options: 'i' };
-    if (colors && colors.length) filter.color = { $in: colors.map((c) => new RegExp(`^${c}$`, 'i')) };
-    if (brands && brands.length) filter.brand = { $in: brands.map((b) => new RegExp(`^${b}$`, 'i')) };
+    const wardrobeItems = await ClothingItem.find({ owner: req.user._id });
+    const result = await stylistService.planBudget({
+      budget, goal, categories, style, priorities, wardrobeItems, user: req.user,
+    });
 
-    const candidates = await Product.find(filter).sort({ price: 1 });
-
-    const picked = [];
-    let runningTotal = 0;
-    const seenCategories = new Set();
-
-    for (const product of candidates) {
-      // Prefer at least one item per distinct category first (versatility),
-      // then fill remaining budget with any other affordable items.
-      if (runningTotal + product.price > budget) continue;
-      if (seenCategories.has(product.category) && seenCategories.size < (categories?.length || 99)) continue;
-
-      picked.push(product);
-      runningTotal += product.price;
-      seenCategories.add(product.category);
+    let items = result.items;
+    if (productSearchService.isConfigured) {
+      items = await Promise.all(items.map(async (item) => {
+        try {
+          const search = await productSearchService.search({ query: item.searchQuery, maxPrice: item.unitBudget, limit: 3 });
+          return { ...item, products: search.products };
+        } catch (err) {
+          console.warn(`Product lookup failed for "${item.searchQuery}":`, err.message);
+          return { ...item, products: [] };
+        }
+      }));
     }
-
-    const overBudget = picked.length === 0 && candidates.length > 0;
 
     const shoppingList = await ShoppingList.create({
       owner: req.user._id,
-      title: occasion ? `${occasion} shopping list` : 'My Shopping List',
+      title: goal ? goal.slice(0, 80) : 'Shopping plan',
       budget,
-      occasion: occasion || null,
-      items: picked.map((p) => ({
-        product: p._id,
-        snapshot: { name: p.name, brand: p.brand, price: p.price, imageUrl: p.imageUrl, category: p.category },
-        reason: `Fits your ${budget ? 'budget' : 'preferences'} and complements a versatile wardrobe.`,
-      })),
-      estimatedTotal: runningTotal,
-      overBudget,
+      goal: goal || '',
+      strategy: result.strategy,
+      items,
+      allocatedTotal: result.total,
+      hasLiveProducts: items.some((i) => i.products?.length),
     });
 
     res.status(201).json({
       success: true,
       data: {
         shoppingList,
-        isDevCatalog: true,
-        remainingBudget: budget - runningTotal,
-        warning: overBudget
-          ? 'No products matched your filters within this budget. Try widening your filters or increasing the budget.'
-          : null,
+        remainingBudget: budget - result.total,
+        productSearchConfigured: productSearchService.isConfigured,
       },
     });
   } catch (error) {
@@ -71,9 +86,7 @@ const plan = async (req, res, next) => {
 // GET /api/shopping/saved
 const getSavedLists = async (req, res, next) => {
   try {
-    const lists = await ShoppingList.find({ owner: req.user._id })
-      .populate('items.product')
-      .sort({ createdAt: -1 });
+    const lists = await ShoppingList.find({ owner: req.user._id }).sort({ createdAt: -1 });
     res.json({ success: true, data: { lists, count: lists.length } });
   } catch (error) {
     next(error);
@@ -83,18 +96,14 @@ const getSavedLists = async (req, res, next) => {
 // DELETE /api/shopping/saved/:id
 const deleteList = async (req, res, next) => {
   try {
-    const list = await ShoppingList.findById(req.params.id);
+    const list = await ShoppingList.findOneAndDelete({ _id: req.params.id, owner: req.user._id });
     if (!list) {
       return res.status(404).json({ success: false, message: 'Shopping list not found.' });
     }
-    if (String(list.owner) !== String(req.user._id)) {
-      return res.status(403).json({ success: false, message: 'You do not have permission to delete this list.' });
-    }
-    await list.deleteOne();
     res.json({ success: true, message: 'Shopping list deleted.' });
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = { plan, getSavedLists, deleteList };
+module.exports = { plan, getSavedLists, deleteList, assistantSearch };

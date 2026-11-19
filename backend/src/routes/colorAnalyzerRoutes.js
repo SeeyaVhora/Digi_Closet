@@ -1,12 +1,21 @@
 const express = require('express');
 const authenticate = require('../middleware/authMiddleware');
 const { aiRateLimiter } = require('../middleware/rateLimitMiddleware');
-const { validate, colorAnalyzeSchema } = require('../middleware/validateMiddleware');
-const { analyze } = require('../controllers/colorAnalyzerController');
+const { upload } = require('../middleware/uploadMiddleware');
+const {
+  analyzePersonalPalette,
+  getPersonalPalette,
+  savePersonalPalette,
+  deletePersonalPalette,
+} = require('../controllers/colorAnalyzerController');
 
 const router = express.Router();
 
 router.use(authenticate);
-router.post('/analyze', aiRateLimiter, validate(colorAnalyzeSchema), analyze);
+
+router.post('/palette/analyze', aiRateLimiter, upload.single('image'), analyzePersonalPalette);
+router.get('/palette', getPersonalPalette);
+router.put('/palette', savePersonalPalette);
+router.delete('/palette', deletePersonalPalette);
 
 module.exports = router;

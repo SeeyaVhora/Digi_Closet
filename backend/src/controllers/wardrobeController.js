@@ -1,20 +1,30 @@
 const ClothingItem = require('../models/ClothingItem');
 const imageService = require('../services/imageService');
-const geminiService = require('../services/geminiService');
+const stylistService = require('../services/stylistService');
+
+const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Only accept storage paths inside the caller's own folder, so a crafted
+// imagePath/imageUrl can never point a later delete at someone else's file.
+function ownedImagePath(uid, imagePath, imageUrl) {
+  const candidate = imagePath || (imageUrl?.startsWith('/uploads/') ? imageUrl.slice('/uploads/'.length) : null);
+  if (!candidate || candidate.includes('..')) return null;
+  return candidate.startsWith(`${uid}/`) || candidate.startsWith(`users/${uid}/`) ? candidate : null;
+}
 
 // GET /api/wardrobe
 const getItems = async (req, res, next) => {
   try {
-    const { category, search, sort } = req.query;
+    const { category, search, sort, season, occasion, color } = req.query;
 
     const filter = { owner: req.user._id };
     if (category) filter.category = category;
+    if (season) filter.season = season;
+    if (occasion) filter.occasions = { $regex: `^${escapeRegex(occasion)}$`, $options: 'i' };
+    if (color) filter.colors = { $regex: `^${escapeRegex(color)}$`, $options: 'i' };
     if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { brand: { $regex: search, $options: 'i' } },
-        { colors: { $regex: search, $options: 'i' } },
-      ];
+      const pattern = { $regex: escapeRegex(search), $options: 'i' };
+      filter.$or = ['name', 'brand', 'colors', 'type', 'style', 'occasions'].map((field) => ({ [field]: pattern }));
     }
 
     let sortSpec = { createdAt: -1 };
@@ -49,15 +59,15 @@ const getItemById = async (req, res, next) => {
   }
 };
 
-// POST /api/wardrobe/classify — AI-assisted category/color/style suggestion
-// from an uploaded image, for the user to review before saving.
+// POST /api/wardrobe/classify — Gemini tags an uploaded photo; the user
+// reviews and edits the suggestion before anything is saved.
 const classifyImage = async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No image uploaded.' });
     }
-    const suggestion = await geminiService.classifyClothingImage({
-      imageBase64: req.file.buffer.toString('base64'),
+    const suggestion = await stylistService.analyzeClothingImage({
+      buffer: req.file.buffer,
       mimeType: req.file.mimetype,
     });
     res.json({ success: true, data: { suggestion } });
@@ -88,7 +98,7 @@ const uploadImage = async (req, res, next) => {
 const addItem = async (req, res, next) => {
   try {
     const {
-      name, description, category, imageUrl, colors, pattern,
+      name, description, category, type, imageUrl, imagePath, colors, pattern,
       season, style, occasions, size, fit, brand, notes, aiSuggested,
     } = req.body;
 
@@ -97,7 +107,9 @@ const addItem = async (req, res, next) => {
       name,
       description: description || '',
       category,
+      type: type || null,
       imageUrl: imageUrl || null,
+      imagePath: ownedImagePath(req.firebaseUser.uid, imagePath, imageUrl),
       colors: colors || [],
       pattern: pattern || null,
       season: season || [],
@@ -132,13 +144,16 @@ const updateItem = async (req, res, next) => {
     }
 
     const updatable = [
-      'name', 'description', 'category', 'imageUrl', 'colors', 'pattern',
+      'name', 'description', 'category', 'type', 'imageUrl', 'colors', 'pattern',
       'season', 'style', 'occasions', 'size', 'fit', 'brand', 'notes',
     ];
     for (const field of updatable) {
       if (req.body[field] !== undefined) {
         item[field] = req.body[field];
       }
+    }
+    if (req.body.imageUrl !== undefined) {
+      item.imagePath = ownedImagePath(req.firebaseUser.uid, req.body.imagePath, req.body.imageUrl);
     }
 
     await item.save();
@@ -166,8 +181,9 @@ const deleteItem = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'You do not have permission to delete this item.' });
     }
 
-    if (item.imageUrl && item.imageUrl.startsWith('/uploads/')) {
-      imageService.deleteImage(item.imageUrl.replace('/uploads/', ''));
+    const storedPath = ownedImagePath(req.firebaseUser.uid, item.imagePath, item.imageUrl);
+    if (storedPath) {
+      imageService.deleteImage(storedPath).catch((err) => console.warn('Image cleanup failed:', err.message));
     }
 
     await item.deleteOne();

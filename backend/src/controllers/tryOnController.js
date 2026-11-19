@@ -1,3 +1,4 @@
+const stylistService = require('../services/stylistService');
 const imageService = require('../services/imageService');
 const tryOnService = require('../services/tryOnService');
 
@@ -29,14 +30,11 @@ const createTryOn = async (req, res, next) => {
       garmentImageUrl: garmentImage.url,
     });
 
-    const geminiService = require('../services/geminiService');
     let fitAnalysis = null;
     try {
-      fitAnalysis = await geminiService.analyzeTryOnFit({
-        userImageBase64: userPhoto.buffer.toString('base64'),
-        garmentImageBase64: garmentPhoto.buffer.toString('base64'),
-        userMimeType: userPhoto.mimetype,
-        garmentMimeType: garmentPhoto.mimetype,
+      fitAnalysis = await stylistService.analyzeTryOnFit({
+        userPhoto: { buffer: userPhoto.buffer, mimeType: userPhoto.mimetype },
+        garmentPhoto: { buffer: garmentPhoto.buffer, mimeType: garmentPhoto.mimetype },
       });
     } catch (analysisErr) {
       console.error('Fit analysis failed:', analysisErr.message);

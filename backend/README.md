@@ -23,8 +23,6 @@ The backend REST API server for DigiCloset, built with **Node.js**, **Express.js
 
 ```
 backend/
-├── database/
-│   └── seed.js             # Seeds initial catalog with 24 curated fashion products
 ├── src/
 │   ├── config/
 │   │   ├── db.js           # Mongoose connection with retry logic
@@ -34,7 +32,8 @@ backend/
 │   ├── middleware/         # Auth, validation, error handling, rate limiting, multer
 │   ├── models/             # 8 Mongoose schemas (User, ClothingItem, SavedOutfit, etc.)
 │   ├── routes/             # 12 Modular Express routers mounted at /api/*
-│   ├── services/           # Gemini AI, weather, image storage, try-on, product search
+│   ├── services/           # geminiService (SDK wrapper), stylistService (AI features),
+│   │                       # weather, image storage, try-on, product search
 │   └── index.js            # Express application bootstrap & server listen
 ├── uploads/                # Local file storage for uploads in dev mode (.gitignored)
 ├── .env.example            # Environment variables template
@@ -68,7 +67,10 @@ MONGODB_URI=mongodb://127.0.0.1:27017/digi_closet
 CLIENT_URL=http://localhost:5173
 FIREBASE_PROJECT_ID=demo-digi-closet
 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
-GEMINI_API_KEY=your_gemini_api_key_here  # Optional: falls back gracefully to offline mode
+GEMINI_API_KEY=your_gemini_api_key_here  # Required for every AI feature
+GEMINI_MODEL=gemini-3.5-flash-lite        # Optional override
+GEMINI_FALLBACK_MODEL=gemini-3.1-flash-lite
+PRODUCT_SEARCH_API_KEY=                  # Optional: SerpApi key for live product listings
 ```
 
 ### 3. Start Local MongoDB
@@ -81,10 +83,10 @@ npm run db:start
 npm run db:stop
 ```
 
-### 4. Seed Dev Catalog (Optional)
+### 4. Start the Firebase Auth emulator
 
 ```bash
-npm run seed
+firebase emulators:start --only auth --project demo-digi-closet
 ```
 
 ### 5. Start Development Server
@@ -103,15 +105,13 @@ The server will listen at `http://localhost:5001`. Health check endpoint: `GET h
 |---------|-------------|
 | `npm run dev` | Starts server with `nodemon` for auto-restart on file changes |
 | `npm start` | Runs server in production mode with standard `node` |
-| `npm run seed` | Seeds MongoDB with 24 curated fashion products |
 | `npm run db:start` | Launches background `mongod` instance pointing to `~/.digi-closet/mongodb-data` |
 | `npm run db:stop` | Safely stops the local `mongod` background instance |
 
 ---
 
-## AI Offline Fallback Mode
+## How AI requests work
 
-If no `GEMINI_API_KEY` is provided in `.env`, the backend will not crash or fail. It automatically switches to **offline fallback mode**:
-- Uses rule-based color harmony matrices, occasion rules, and style archetypes
-- All responses include `mode: "offline-fallback"` metadata
-- Perfect for zero-cost local development and automated testing
+All Gemini calls go through `src/services/geminiService.js`, which uses the official `@google/genai` SDK with JSON-schema structured output. When a model returns 429/503 or times out, it retries on `GEMINI_FALLBACK_MODEL` and then the primary model once more, all within about 60 seconds. If every attempt fails, the endpoint returns a clear error (see `docs/api-reference.md`). There is no mock or rule-based fallback, so a response is either real Gemini output or an error.
+
+Model output is never trusted blindly. Outfit item ids are checked against the user's wardrobe, hex colours are validated, and budget plans are trimmed in code until they fit the budget.

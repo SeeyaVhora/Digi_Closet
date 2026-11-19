@@ -30,16 +30,29 @@ const authenticate = async (req, res, next) => {
       });
     }
 
+    // Lazily create the Mongo profile on first authenticated request. This is
+    // an atomic upsert because the client fires several requests right after
+    // sign-in; a find-then-create would race and fail the unique index.
     let user = await User.findOne({ firebaseUid: decoded.uid });
-
-    // Lazily create the Mongo profile on first authenticated request
-    // (covers users created directly via Firebase Auth, e.g. right after signup).
     if (!user) {
-      user = await User.create({
-        firebaseUid: decoded.uid,
-        name: decoded.name || decoded.email?.split('@')[0] || 'New User',
-        email: decoded.email,
-      });
+      try {
+        user = await User.findOneAndUpdate(
+          { firebaseUid: decoded.uid },
+          {
+            $setOnInsert: {
+              firebaseUid: decoded.uid,
+              name: decoded.name || decoded.email?.split('@')[0] || 'New User',
+              email: decoded.email,
+            },
+          },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+      } catch (err) {
+        // Two concurrent upserts can still collide; the other one won.
+        if (err.code !== 11000) throw err;
+        user = await User.findOne({ firebaseUid: decoded.uid });
+        if (!user) throw err;
+      }
     }
 
     req.user = user;

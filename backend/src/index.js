@@ -15,6 +15,11 @@ connectDB();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+// Express 5 leaves req.body undefined when a request has no body.
+app.use((req, res, next) => {
+  req.body ??= {};
+  next();
+});
 
 // Local dev image storage (served only when FIREBASE_STORAGE_BUCKET is unset)
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));

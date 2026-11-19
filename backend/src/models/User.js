@@ -29,6 +29,51 @@ const physicalProfileSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const colorSwatchSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    hex: { type: String, required: true },
+    note: { type: String, default: '' },
+  },
+  { _id: false }
+);
+
+const colorCombinationSchema = new mongoose.Schema(
+  {
+    name: { type: String, default: '' },
+    usage: { type: String, default: '' },
+    hexes: { type: [String], default: [] },
+  },
+  { _id: false }
+);
+
+// Only the derived palette is stored; the face photo used to create it is not.
+const personalColorPaletteSchema = new mongoose.Schema(
+  {
+    season: {
+      type: String,
+      enum: ['Spring', 'Summer', 'Autumn', 'Winter', 'Unknown'],
+      default: 'Unknown',
+    },
+    undertone: {
+      type: String,
+      enum: ['warm', 'cool', 'neutral', 'uncertain'],
+      default: 'uncertain',
+    },
+    contrast: { type: String, enum: ['low', 'medium', 'high', null], default: null },
+    summary: { type: String, default: '' },
+    lightingNote: { type: String, default: '' },
+    recommendedColors: { type: [colorSwatchSchema], default: [] },
+    neutralColors: { type: [colorSwatchSchema], default: [] },
+    experimentColors: { type: [colorSwatchSchema], default: [] },
+    avoidColors: { type: [colorSwatchSchema], default: [] },
+    combinations: { type: [colorCombinationSchema], default: [] },
+    source: { type: String, enum: ['ai', 'custom'], default: 'ai' },
+    analyzedAt: { type: Date, default: null },
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     firebaseUid: { type: String, required: true, unique: true, index: true },
@@ -37,6 +82,7 @@ const userSchema = new mongoose.Schema(
     onboardingCompleted: { type: Boolean, default: false },
     stylePreferences: { type: stylePreferencesSchema, default: () => ({}) },
     physicalProfile: { type: physicalProfileSchema, default: () => ({}) },
+    colorPalette: { type: personalColorPaletteSchema, default: () => ({}) },
     privacySettings: {
       allowPhysicalDataUse: { type: Boolean, default: false },
       allowAIPersonalization: { type: Boolean, default: true },

@@ -3,7 +3,7 @@ const env = require('../config/env');
 const errorHandler = (err, req, res, _next) => {
   console.error('Error:', err.message);
 
-  if (env.NODE_ENV === 'development') {
+  if (env.NODE_ENV === 'development' && !err.statusCode) {
     console.error(err.stack);
   }
 
@@ -31,6 +31,13 @@ const errorHandler = (err, req, res, _next) => {
     return res.status(400).json({
       success: false,
       message: 'Invalid identifier supplied.',
+    });
+  }
+
+  if (err.name === 'MulterError') {
+    return res.status(400).json({
+      success: false,
+      message: err.code === 'LIMIT_FILE_SIZE' ? 'Image is too large. The maximum size is 5MB.' : err.message,
     });
   }
 

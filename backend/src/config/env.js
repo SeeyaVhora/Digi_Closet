@@ -14,9 +14,13 @@ const env = {
 
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   GEMINI_CONFIGURED: Boolean(process.env.GEMINI_API_KEY),
+  GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
+  GEMINI_FALLBACK_MODEL: process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.1-flash-lite',
 
   WEATHER_PROVIDER: process.env.WEATHER_PROVIDER || 'open-meteo',
 
+  // Only "serpapi" (Google Shopping via serpapi.com) is implemented today.
+  PRODUCT_SEARCH_PROVIDER: process.env.PRODUCT_SEARCH_PROVIDER || 'serpapi',
   PRODUCT_SEARCH_API_KEY: process.env.PRODUCT_SEARCH_API_KEY || '',
   PRODUCT_SEARCH_CONFIGURED: Boolean(process.env.PRODUCT_SEARCH_API_KEY),
 

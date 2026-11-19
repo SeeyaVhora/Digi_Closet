@@ -1,30 +1,41 @@
 const ClothingItem = require('../models/ClothingItem');
-const geminiService = require('../services/geminiService');
+const stylistService = require('../services/stylistService');
 
-// POST /api/fashion/analyze — accepts either an uploaded image or a list of
-// wardrobe item ids (validated against the user's actual wardrobe).
+function parseIds(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return String(raw).split(',').map((id) => id.trim()).filter(Boolean);
+  }
+}
+
+// POST /api/fashion/analyze — multipart: optional `image`, optional `itemIds`
+// (JSON array of the user's wardrobe ids), optional `occasion`.
 const analyze = async (req, res, next) => {
   try {
-    const { occasion, itemIds } = req.body;
-    let items = [];
+    const { occasion } = req.body;
+    const itemIds = parseIds(req.body.itemIds);
 
-    if (itemIds) {
-      const parsedIds = Array.isArray(itemIds) ? itemIds : JSON.parse(itemIds);
-      items = await ClothingItem.find({ _id: { $in: parsedIds }, owner: req.user._id });
-    }
+    const wardrobeItems = await ClothingItem.find({ owner: req.user._id });
+    const selectedItems = wardrobeItems.filter((item) => itemIds.includes(String(item._id)));
 
-    const payload = { occasion, items };
-    if (req.file) {
-      payload.imageBase64 = req.file.buffer.toString('base64');
-      payload.mimeType = req.file.mimetype;
-    } else if (items.length === 0) {
+    if (!req.file && selectedItems.length < 2) {
       return res.status(400).json({
         success: false,
-        message: 'Provide an outfit photo or select wardrobe items to critique.',
+        message: 'Upload an outfit photo or select at least two items from your wardrobe.',
       });
     }
 
-    const result = await geminiService.critiqueOutfit(payload);
+    const result = await stylistService.critiqueOutfit({
+      image: req.file && { buffer: req.file.buffer, mimeType: req.file.mimetype },
+      selectedItems,
+      wardrobeItems,
+      occasion,
+    });
+
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);

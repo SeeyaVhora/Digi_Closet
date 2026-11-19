@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "seed": "node database/seed.js",
     "db:start": "mkdir -p ~/.digi-closet/mongodb-data ~/.digi-closet/mongodb-logs && mongod --dbpath ~/.digi-closet/mongodb-data --logpath ~/.digi-closet/mongodb-logs/mongo.log --port 27017",
     "db:stop": "killall mongod 2>/dev/null || true"
   },
@@ -14,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
+    "@google/genai": "^3.6.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

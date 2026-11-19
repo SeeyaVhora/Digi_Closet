@@ -1,3 +1,5 @@
+const { CATEGORIES } = require('../models/ClothingItem');
+
 /**
  * Validation middleware factory.
  * Takes a schema object with field validators and returns Express middleware.
@@ -76,20 +78,8 @@ const wardrobeSchema = {
   category: {
     required: true,
     label: 'Category',
-    enum: ['Tops', 'Shirts', 'T-Shirts', 'Trousers', 'Jeans', 'Dresses', 'Footwear', 'Outerwear', 'Accessories'],
+    enum: CATEGORIES,
   },
-};
-
-const outfitRecommendSchema = {
-  occasion: { label: 'Occasion' },
-};
-
-const colorAnalyzeSchema = {
-  colors: { required: true, label: 'Colors', isArray: true },
-};
-
-const shoppingPlanSchema = {
-  budget: { required: true, label: 'Budget', isNumber: true },
 };
 
 const chatSchema = {
@@ -100,8 +90,5 @@ module.exports = {
   validate,
   profileSchema,
   wardrobeSchema,
-  outfitRecommendSchema,
-  colorAnalyzeSchema,
-  shoppingPlanSchema,
   chatSchema,
 };

@@ -1,62 +1,97 @@
 /**
- * Product Search Service
+ * Product search across real shopping sources.
  *
- * No licensed product search / affiliate API is configured yet
- * (PRODUCT_SEARCH_API_KEY is unset). In that state, this service searches
- * the locally seeded MongoDB `Product` collection — real documents, real
- * prices — and every result is explicitly flagged `isDevCatalog: true` so
- * the frontend can show a "Development Catalog" banner. No listings,
- * prices, or ratings are invented; they come straight from the seed data.
+ * Providers are plain objects with a `search()` that returns normalised
+ * products. Only SerpApi's Google Shopping engine is implemented; add another
+ * provider to PROVIDERS and point PRODUCT_SEARCH_PROVIDER at it.
  *
- * Once a real provider is wired in (PRODUCT_SEARCH_API_KEY set), replace
- * the body of `search()` with a live API call while keeping the same
- * return shape.
+ * With no provider configured, search() returns no products, only genuine
+ * marketplace search links, and says so. It never invents listings.
  */
 
-const Product = require('../models/Product');
 const env = require('../config/env');
+
+const serpApiProvider = {
+  name: 'Google Shopping (SerpApi)',
+
+  async search({ query, minPrice, maxPrice, limit }) {
+    const params = new URLSearchParams({
+      engine: 'google_shopping',
+      q: query,
+      gl: 'in',
+      hl: 'en',
+      location: 'India',
+      api_key: env.PRODUCT_SEARCH_API_KEY,
+    });
+    if (minPrice) params.set('min_price', String(minPrice));
+    if (maxPrice) params.set('max_price', String(maxPrice));
+
+    const res = await fetch(`https://serpapi.com/search.json?${params}`, { signal: AbortSignal.timeout(20000) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.error) {
+      const err = new Error(`Product search failed: ${data.error || res.statusText}`);
+      err.statusCode = res.status === 401 ? 502 : 503;
+      throw err;
+    }
+
+    return (data.shopping_results || [])
+      .filter((p) => p.title && p.product_link && typeof p.extracted_price === 'number')
+      .slice(0, limit)
+      .map((p) => ({
+        id: p.product_id || p.product_link,
+        title: p.title,
+        price: Math.round(p.extracted_price),
+        priceText: p.price,
+        merchant: p.source || 'Online store',
+        imageUrl: p.thumbnail || null,
+        link: p.product_link,
+        rating: p.rating ?? null,
+        reviews: p.reviews ?? null,
+        description: p.snippet || (p.extensions || []).join(' · '),
+      }));
+  },
+};
+
+const PROVIDERS = { serpapi: serpApiProvider };
+
+function marketplaceLinks(query) {
+  const q = encodeURIComponent(query.trim());
+  return [
+    { platform: 'Myntra', url: `https://www.myntra.com/${encodeURIComponent(query.trim().toLowerCase().replace(/\s+/g, '-'))}` },
+    { platform: 'Amazon', url: `https://www.amazon.in/s?k=${q}` },
+    { platform: 'Flipkart', url: `https://www.flipkart.com/search?q=${q}` },
+    { platform: 'AJIO', url: `https://www.ajio.com/search/?text=${q}` },
+  ];
+}
 
 class ProductSearchService {
   constructor() {
-    this.isLiveConfigured = env.PRODUCT_SEARCH_CONFIGURED;
+    this.provider = env.PRODUCT_SEARCH_CONFIGURED ? PROVIDERS[env.PRODUCT_SEARCH_PROVIDER] : null;
+    if (env.PRODUCT_SEARCH_CONFIGURED && !this.provider) {
+      console.warn(`⚠️  Unknown PRODUCT_SEARCH_PROVIDER "${env.PRODUCT_SEARCH_PROVIDER}". Product search is disabled.`);
+    }
   }
 
-  async search({ query, category, brand, color, style, occasion, minPrice, maxPrice, sort }) {
-    if (this.isLiveConfigured) {
-      // Boundary for a real provider — not implemented until credentials exist.
-      throw Object.assign(new Error('Live product search provider is not yet implemented.'), { statusCode: 501 });
-    }
+  get isConfigured() {
+    return Boolean(this.provider);
+  }
 
-    const filter = {};
-    if (category) filter.category = category;
-    if (brand) filter.brand = { $regex: brand, $options: 'i' };
-    if (color) filter.color = { $regex: `^${color}$`, $options: 'i' };
-    if (style) filter.style = { $regex: `^${style}$`, $options: 'i' };
-    if (minPrice || maxPrice) {
-      filter.price = {};
-      if (minPrice) filter.price.$gte = Number(minPrice);
-      if (maxPrice) filter.price.$lte = Number(maxPrice);
-    }
-    if (query) {
-      filter.$or = [
-        { name: { $regex: query, $options: 'i' } },
-        { brand: { $regex: query, $options: 'i' } },
-        { description: { $regex: query, $options: 'i' } },
-      ];
-    }
-
-    let sortSpec = { createdAt: -1 };
-    if (sort === 'price_asc') sortSpec = { price: 1 };
-    if (sort === 'price_desc') sortSpec = { price: -1 };
-
-    const products = await Product.find(filter).sort(sortSpec);
-
-    return {
-      isDevCatalog: true,
-      source: 'local-seed-catalog',
-      products,
-      count: products.length,
+  async search({ query, minPrice, maxPrice, limit = 12 }) {
+    const base = {
+      configured: this.isConfigured,
+      provider: this.provider?.name || null,
+      marketplaceLinks: marketplaceLinks(query),
     };
+    if (!this.provider) {
+      return { ...base, products: [] };
+    }
+
+    const products = await this.provider.search({ query, minPrice, maxPrice, limit: limit * 2 });
+    // Providers treat price bounds as hints, so enforce them here.
+    const inRange = products
+      .filter((p) => (!maxPrice || p.price <= maxPrice) && (!minPrice || p.price >= minPrice))
+      .slice(0, limit);
+    return { ...base, products: inRange };
   }
 }
 
