@@ -1,295 +1,219 @@
-# DigiCloset — AI-Powered Personal Fashion Assistant
+# DigiCloset
 
-[![GitHub Repository](https://img.shields.io/badge/GitHub-iam--Jam24%2FDigi__Closet-blue?logo=github)](https://github.com/iam-Jam24/Digi_Closet.git)
-[![React](https://img.shields.io/badge/React-19.x-61DAFB?logo=react&logoColor=black)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-8.x-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+**An AI-powered personal stylist built around the clothes you already own.**
+
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![Express.js](https://img.shields.io/badge/Express-5.x-black?logo=express)](https://expressjs.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-6.0%2B-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-3.5%20Flash%20Lite-4285F4?logo=google)](https://ai.google.dev/)
+[![Express](https://img.shields.io/badge/Express-5-black?logo=express)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-6%2B-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Firebase Auth](https://img.shields.io/badge/Auth-Firebase-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/)
+[![Google Gemini](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
 [![License: ISC](https://img.shields.io/badge/License-ISC-yellow.svg)](https://opensource.org/licenses/ISC)
 
-> **DigiCloset** is an intelligent personal styling companion and digital wardrobe manager. It bridges the gap between what you own and what you wear, harnessing multimodal AI to curate daily outfits, critique style choices, analyze color palettes, and optimize shopping decisions based on your real wardrobe and personal body profile.
+DigiCloset turns your wardrobe into a digital closet. It suggests what to wear, reviews your outfits and helps you shop smarter, all based on your own clothes, your profile and the weather.
 
 ---
 
-## Table of Contents
+## Contents
 
-- [Project Title & Introduction](#project-title--introduction)
-- [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Running the Application](#running-the-application)
-- [Available Scripts](#available-scripts)
-- [API Documentation Overview](#api-documentation-overview)
-- [Troubleshooting Guide](#troubleshooting-guide)
-- [GitHub Contribution Guide](#github-contribution-guide)
+- [Why DigiCloset](#why-digicloset)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Scripts](#scripts)
+- [Project Layout](#project-layout)
+- [Troubleshooting](#troubleshooting)
 - [Security & Privacy](#security--privacy)
-- [Roadmap](#roadmap)
+- [Contributing](#contributing)
 - [License](#license)
 
 ---
 
-## Project Title & Introduction
+## Why DigiCloset
 
-### The Problem
-Most people wear only 20% of the clothing in their wardrobe, suffering from "closet paralysis" — spending valuable time every morning wondering what to wear. Traditional fashion apps either require tedious manual logging, push aggressive fast-fashion advertising, or offer generic advice that ignores what you actually own, your body type, and local weather conditions.
+Most people wear a small part of their wardrobe and still spend every morning deciding what to put on. Generic fashion apps don't help much: they ignore what you own, push new purchases, or give one-size-fits-all advice.
 
-### The Solution
-**DigiCloset** digitizes your existing closet in minutes and acts as a 24/7 private stylist in your pocket. Using **Google Gemini AI**, DigiCloset understands your clothing items visually, cross-references local weather forecasts, honors your personalized style and fit metrics, and delivers context-aware, cohesive outfit combinations directly from your closet.
-
-### Target Audience
-- **Busy Professionals & Students:** Looking to streamline their morning routine and look sharp effortlessly.
-- **Conscious Consumers & Minimalists:** Striving to build a versatile capsule wardrobe and minimize impulse shopping.
-- **Fashion Explorers:** Eager to discover fresh color harmonies, try new aesthetics, and receive constructive styling feedback.
+DigiCloset starts from **your real wardrobe**. Add your clothes once, and the AI stylist builds outfits, gives honest feedback and finds gaps worth filling, all tailored to your style, body profile and local weather.
 
 ---
 
-## Technology Stack
+## Features
 
-### Frontend Client
-- **Core:** [React 19](https://react.dev/) + [Vite 8](https://vite.dev/) (lightning-fast HMR)
-- **Routing:** [React Router v7](https://reactrouter.com/) (declarative routing with protected route guards)
-- **Styling:** Bespoke **Vanilla CSS** design system (tokens, glassmorphism, responsive grid layouts — no Tailwind dependency)
-- **Authentication:** [Firebase JS SDK v13](https://firebase.google.com/) (Email/Password & Google Sign-In)
-- **API Client:** [Axios](https://axios-http.com/) (configured with Bearer token interceptor and `/api` proxy)
-- **Icons:** [Lucide React](https://lucide.dev/) (consistent modern icons)
-- **Code Quality:** [Oxlint](https://oxc.rs/) (high-speed JavaScript/JSX linting)
+### Your Space
+- **My Wardrobe**: upload photos of your clothes and let AI tag the category, colour and style for you.
+- **Saved Looks**: keep the outfits, try-ons and products you like in one place.
+- **Overview dashboard**: today's weather, quick outfit ideas and wardrobe highlights at a glance.
 
-### Backend Service
-- **Runtime:** [Node.js](https://nodejs.org/) (`v18+` or `v20+`)
-- **Server Framework:** [Express.js v5](https://expressjs.com/)
-- **Database & ODM:** [MongoDB](https://www.mongodb.com/) with [Mongoose v9](https://mongoosejs.com/)
-- **Authentication Verification:** [Firebase Admin SDK](https://firebase.google.com/docs/admin/setup) (token validation & emulator support)
-- **Artificial Intelligence:** [Google Gemini API](https://ai.google.dev/) via the official `@google/genai` SDK (`gemini-3.5-flash-lite` by default, with an automatic fallback model). No mock responses.
-- **Weather Service:** [Open-Meteo API](https://open-meteo.com/) (zero-config, keyless weather data)
-- **File Uploads:** [Multer](https://github.com/expressjs/multer) (multipart form data with MIME validation)
-- **Rate Limiting:** [express-rate-limit](https://github.com/express-rate-limit/express-rate-limit)
+### AI Studio
+- **Outfit Generator**: complete outfits picked from your own wardrobe for any occasion.
+- **Virtual Try-On**: see yourself wearing pieces from your wardrobe.
+- **Style Makeover**: get a suggested new style and see it on you.
+- **Colour Palette**: find the colours that suit you and how well your clothes match them.
+- **Fashion Critic**: upload an outfit photo for a rating, feedback and styling tips.
+- **AI Stylist chat**: ask fashion questions and get answers that know your wardrobe.
 
----
+### Discover
+- **Weather Looks**: outfit ideas that fit the forecast where you are.
+- **Clothes Finder**: describe what you want in plain words and get matching products.
+- **Budget Planner**: plan purchases that fill real wardrobe gaps within your budget.
 
-## Project Structure
+### Planning
+- **Outfit Calendar**: plan outfits by date and track what you've worn.
+- **Wardrobe Insights**: see what you wear most, what you never wear and where the gaps are.
 
-```
-Digi_Closet/
-├── backend/
-│   ├── src/
-│   │   ├── config/             # Database connection, env loader, Firebase Admin init
-│   │   ├── controllers/        # 12 Express controllers for each functional domain
-│   │   ├── middleware/         # Auth verification, file upload, error handling, rate limiting
-│   │   ├── models/             # 8 Mongoose schemas (User, ClothingItem, SavedOutfit, etc.)
-│   │   ├── routes/             # 12 Modular route definitions mounted under /api
-│   │   ├── services/           # Gemini AI, image generation, weather, image storage
-│   │   └── index.js            # Express app initialization and HTTP listener
-│   ├── uploads/                # Local uploads directory (auto-created in dev, gitignored)
-│   ├── .env.example            # Backend environment template
-│   ├── package.json            # Backend scripts and dependencies
-│   └── README.md               # Backend-specific architecture guide
-├── frontend/
-│   ├── public/                 # Static assets (favicons, SVG sprites)
-│   ├── src/
-│   │   ├── components/         # 15 reusable UI components (Buttons, Modals, Cards, Toasts)
-│   │   ├── context/            # AuthContext (Firebase auth lifecycle)
-│   │   ├── hooks/              # 8 custom hooks (useWardrobe, useOutfits, useChat, etc.)
-│   │   ├── layout/             # MainLayout (sidebar + top bar) and AuthLayout
-│   │   ├── pages/              # 15 React route pages (Dashboard, Wardrobe, Critic, etc.)
-│   │   ├── routes/             # AppRoutes and ProtectedRoute authentication guard
-│   │   ├── services/           # Axios instance with auth interceptor
-│   │   ├── styles/             # Modular CSS architecture (tokens, base, layout, pages)
-│   │   ├── App.jsx             # Top-level application shell with ToastProvider
-│   │   ├── firebase.js         # Firebase Client SDK initialization
-│   │   ├── index.css           # Global stylesheet entry point
-│   │   └── main.jsx            # DOM entry point
-│   ├── .env.example            # Frontend environment template
-│   ├── .oxlintrc.json          # Oxlint linter configuration
-│   ├── package.json            # Frontend scripts and dependencies
-│   ├── vite.config.js          # Vite config with reverse proxy to backend
-│   └── README.md               # Frontend-specific development guide
-├── docs/
-│   ├── api-reference.md        # Complete endpoint documentation with request/response specs
-│   ├── project-structure.md    # Detailed codebase anatomy and file hierarchy
-│   └── setup-guide.md          # Step-by-step local development setup tutorial
-├── .firebaserc                 # Firebase CLI configuration
-├── firebase.json               # Firebase Emulator Suite configuration
-├── storage.rules               # Cloud Storage security rules
-├── .gitignore                  # Global Git ignore rules
-└── README.md                   # Main project documentation (this file)
-```
+### Account
+- Sign in with **email and password**, **Google** or **phone number (OTP)**.
+- Guided onboarding to set up your style profile.
+- Export your data or delete your account at any time from Settings.
 
 ---
 
-## Installation
+## Tech Stack
 
-### 1. Clone the Repository
+| Layer | Technologies |
+|-------|--------------|
+| **Frontend** | React 19, Vite 8, React Router 7, Axios, Lucide icons, custom CSS design system |
+| **Backend** | Node.js, Express 5, Mongoose |
+| **Database** | MongoDB |
+| **Authentication** | Firebase Authentication (Firebase Auth Emulator for local development) |
+| **AI** | Google Gemini (text, vision and image generation) |
+| **Integrations** | Open-Meteo (weather), optional product search provider |
+| **Tooling** | Nodemon, Oxlint |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- **Node.js** 18 or newer
+- **MongoDB** 6 or newer, running locally (or a hosted connection string)
+- **Java**, needed by the Firebase Auth Emulator in local development
+- **Firebase CLI**: `npm install -g firebase-tools`
+- A **Google Gemini API key** from [Google AI Studio](https://aistudio.google.com/)
+
+### 1. Clone and install
+
 ```bash
 git clone https://github.com/iam-Jam24/Digi_Closet.git
 cd Digi_Closet
+
+cd backend && npm install && cd ..
+cd frontend && npm install && cd ..
 ```
 
-### 2. Install Backend Dependencies
+### 2. Configure environment variables
+
+Each app ships with a template. Copy it, then fill in your own values:
+
 ```bash
-cd backend
-npm install
-cd ..
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
 
-### 3. Install Frontend Dependencies
+The comments in each `.env.example` explain every setting. Locally, the defaults work with the Firebase Auth Emulator, so the only value you must add is your Gemini API key.
+
+> **Never commit your `.env` files.** They are already in `.gitignore`.
+
+### 3. Run the app
+
+Use four terminal tabs:
+
 ```bash
-cd frontend
-npm install
-cd ..
+# 1. Database
+cd backend && npm run db:start
+
+# 2. Local authentication emulator
+cd backend && npm run auth:start
+
+# 3. API server
+cd backend && npm run dev
+
+# 4. Web client
+cd frontend && npm run dev
 ```
+
+Then open **http://localhost:5173** and create an account.
+
+For a detailed walkthrough, see [`docs/setup-guide.md`](docs/setup-guide.md).
 
 ---
 
-## Running the Application
+## Scripts
 
-Follow these steps across separate terminal tabs to run DigiCloset locally:
+### Backend (`backend/`)
 
-### Step 1: Start MongoDB
-```bash
-cd backend
-npm run db:start
-```
-*(Starts a local MongoDB instance isolated to `~/.digi-closet/mongodb-data`)*
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start the API with auto-reload |
+| `npm start` | Start the API in production mode |
+| `npm run db:start` | Start a local MongoDB instance |
+| `npm run db:stop` | Stop the local MongoDB instance |
+| `npm run auth:start` | Start the Firebase Auth Emulator (local accounts are kept between restarts) |
+| `npm run auth:save` | Save the emulator's local accounts right away |
 
-### Step 2: Start the Firebase Auth Emulator
-Requires Java (`brew install openjdk`, then add `/opt/homebrew/opt/openjdk/bin` to your `PATH`).
-```bash
-cd backend
-npm run auth:start
-```
-*(Accounts are loaded from `emulator-data/` on start and saved every 30 seconds and on exit, so the same email and password keep working after restarts. Java is found automatically if installed with Homebrew.)*
+### Frontend (`frontend/`)
 
-### Step 3: Start the Backend Server
-```bash
-cd backend
-npm run dev
-```
-*(Runs backend at `http://localhost:5001` with nodemon auto-reload)*
-
-### Step 4: Start the Frontend Client
-```bash
-cd frontend
-npm run dev
-```
-*(Runs Vite client at `http://localhost:5173`)*
-
-Now open **`http://localhost:5173`** in your browser to begin exploring DigiCloset!
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start the development server |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview the production build |
+| `npm run lint` | Lint the code with Oxlint |
 
 ---
 
-## Available Scripts
+## Project Layout
 
-### Backend Scripts (`backend/package.json`)
-| Command | Action |
-|---------|--------|
-| `npm run dev` | Runs the Express API with `nodemon` for instant hot-reload on file edits. |
-| `npm start` | Launches the server in standard production mode using `node src/index.js`. |
-| `npm run db:start` | Launches a background `mongod` daemon pointing to local storage directory. |
-| `npm run db:stop` | Gracefully shuts down the background `mongod` instance. |
-| `npm run auth:start` | Runs the Firebase Auth Emulator. Accounts load from `emulator-data/` and are saved every 30 seconds and on exit, so logins survive restarts, crashes and closed terminals. |
-| `npm run auth:save` | Saves the running emulator's accounts to `emulator-data/` right now (use before closing a terminal you can't Ctrl+C). |
+```
+Digi_Closet/
+├── backend/      # Express API: routes, controllers, models, AI and weather services
+├── frontend/     # React client: pages, components, hooks, styles
+├── docs/         # Setup guide and developer documentation
+└── firebase.json # Local emulator configuration
+```
 
-### Frontend Scripts (`frontend/package.json`)
-| Command | Action |
-|---------|--------|
-| `npm run dev` | Launches the Vite development server with Hot Module Replacement on port `5173`. |
-| `npm run build` | Compiles and optimizes React code into the production `dist/` bundle. |
-| `npm run preview` | Spins up a local static server to test the production build before deployment. |
-| `npm run lint` | Analyzes code with `oxlint` for high-speed syntax and style checks. |
+More detail is in [`backend/README.md`](backend/README.md), [`frontend/README.md`](frontend/README.md) and the [`docs/`](docs/) folder.
 
 ---
 
-## API Documentation Overview
+## Troubleshooting
 
-The DigiCloset backend exposes 12 domain route modules. Detailed request and response examples can be found in [`docs/api-reference.md`](docs/api-reference.md).
-
-| Base Route | Methods | Authentication | Description |
-|------------|:-------:|:--------------:|-------------|
-| `/api/auth` | `GET`, `POST` | Required | Synchronize Firebase credentials with MongoDB; fetch current user profile. |
-| `/api/profile` | `GET`, `PUT`, `POST`, `DELETE` | Required | Manage measurements & preferences; export personal data (GDPR); delete account. |
-| `/api/wardrobe` | `GET`, `POST`, `PUT`, `DELETE` | Required | CRUD wardrobe garments with image upload, categories, tags, and colors. |
-| `/api/outfits` | `GET`, `POST`, `DELETE` | Required | Generate AI outfit recommendations; bookmark and manage saved outfits. |
-| `/api/fashion` | `POST` | Required | AI Fashion Critic: rate outfits (0-10), analyze silhouette, provide tips. |
-| `/api/colors` | `POST` | Required | Color Analyzer: evaluate primary and secondary color harmony. |
-| `/api/styling` | `POST` | Required | Occasion-based styling suggestions (Weddings, Date Night, Casual, etc.). |
-| `/api/products`| `GET`, `POST` | Optional / Required | Search curated fashion items; filter by category and price; bookmark favorites. |
-| `/api/shopping`| `GET`, `POST`, `PUT`, `DELETE` | Required | AI budget shopping planner; manage custom shopping lists and costs. |
-| `/api/looks`   | `GET`, `POST`, `PATCH`, `DELETE` | Required | Virtual Try-On and Style Makeover: generate photos of you in wardrobe items or a suggested style; save, favourite, delete. |
-| `/api/chat`    | `POST`, `DELETE` | Required | AI conversational assistant with context injection from user's wardrobe. |
-| `/api/weather` | `GET` | Public | Real-time weather proxy using Open-Meteo API. |
-
----
-
-## Troubleshooting Guide
-
-### 1. "MongoNetworkError: connect ECONNREFUSED 127.0.0.1:27017"
-- **Cause:** MongoDB is not running on your machine.
-- **Solution:** Run `npm run db:start` inside the `backend/` directory, or verify that your system MongoDB service is active.
-
-### 2. "Firebase: Error (auth/network-request-failed)"
-- **Cause:** The client is trying to reach the Firebase Auth Emulator, but the emulator is not running.
-- **Solution:** Either run `npm run auth:start` inside the `backend/` directory, or configure real Firebase credentials in `frontend/.env` and remove `VITE_FIREBASE_AUTH_EMULATOR_HOST`.
-
-### Phone number (OTP) sign-in
-- **Locally:** the Auth Emulator never sends a real SMS. After "Send code", the sign-in form shows the code (marked as local development), and the emulator terminal logs it too.
-- **In production:** enable the Phone provider in Firebase Console > Authentication > Sign-in method, and add your domain to the authorized domains. Firebase sends the SMS and shows an invisible reCAPTCHA check. SMS is billed per message on the Blaze plan.
-
-### 3. "AI features show 'Gemini is not configured' or 'temporarily overloaded'"
-- **Not configured:** add `GEMINI_API_KEY` to `backend/.env` (get one at [Google AI Studio](https://aistudio.google.com/)) and restart the backend. There is no offline mode, by design.
-- **Virtual Try-On / Style Makeover say "no quota for this model":** Gemini image models are paid-only. Enable billing for the API key's Google Cloud project in [Google AI Studio](https://aistudio.google.com/); no code or `.env` change is needed afterwards.
-- **Overloaded (503):** Google is short on capacity for that model. The backend already retries on `GEMINI_FALLBACK_MODEL`; wait a moment, or set `GEMINI_MODEL` to a model with more headroom.
-- **Clothes Finder shows no products:** live listings need `PRODUCT_SEARCH_API_KEY` (a [SerpApi](https://serpapi.com) key). Without it you get Gemini's parsed filters and marketplace search links only.
-
-### 4. "Vite: Failed to load /api/wardrobe (500 Internal Server Error)"
-- **Cause:** The backend server is not running on port 5001.
-- **Solution:** Ensure `npm run dev` is running inside the `backend/` directory.
-
-### 5. "Image upload fails or broken image links"
-- **Cause:** In local development, uploaded images are saved to `backend/uploads/` and served statically.
-- **Solution:** Verify `backend/uploads/` exists and is writable. For production, supply `FIREBASE_STORAGE_BUCKET` in your `.env`.
-
----
-
-## GitHub Contribution Guide
-
-Contributions are welcome! Please follow these standards:
-
-### 1. Branch Naming Conventions
-- `feature/feature-name` — for new capabilities (e.g., `feature/color-filter`)
-- `fix/bug-description` — for defect resolutions (e.g., `fix/token-expiry-handling`)
-- `docs/doc-update` — for documentation improvements
-- `refactor/scope` — for code cleanliness without behavioral change
-
-### 2. Development Workflow
-1. Fork the repository and clone your fork.
-2. Create a descriptive branch: `git checkout -b feature/my-new-feature`.
-3. Make your changes adhering to existing architectural standards.
-4. Run the linter: `cd frontend && npm run lint`.
-5. Commit your changes with clear, semantic commit messages:
-   ```bash
-   git commit -m "feat(wardrobe): add multi-tag search filter"
-   ```
-6. Push to your branch and open a Pull Request against `main`.
+| Problem | Fix |
+|---------|-----|
+| Database connection refused | MongoDB isn't running. Start it with `npm run db:start` in `backend/`. |
+| Sign-in fails with a network error | The Auth Emulator isn't running. Start it with `npm run auth:start` in `backend/`. |
+| Pages fail to load data | The API server isn't running. Start it with `npm run dev` in `backend/`. |
+| AI features say they aren't configured | Add your Gemini API key to `backend/.env`, then restart the API server. |
+| AI features say "busy" or "overloaded" | The AI service is under high demand. Wait a moment and try again. |
+| Try-On or Makeover says there's no quota | Image generation needs billing enabled on your Google AI account. |
+| Clothes Finder shows no product listings | Live listings need an optional product search key (see `backend/.env.example`). |
+| Phone sign-in code doesn't arrive locally | No real SMS is sent in local development. The code appears on the sign-in screen and in the emulator terminal. |
 
 ---
 
 ## Security & Privacy
 
-- **Never Commit Secrets:** Real API keys, database credentials, and service account keys are excluded via `.gitignore`. Always use `.env.example` as a template.
-- **Bearer Token Verification:** All private API endpoints verify the caller's Firebase ID token via the Firebase Admin SDK on every request.
-- **Rate Limiting:** AI endpoints and authentication routes are guarded with `express-rate-limit` to prevent brute-force attacks and API quota exhaustion.
-- **Data Protection & GDPR:** Users can export all personal data (profile, wardrobe, outfits, lists) in machine-readable JSON or permanently delete their account and all associated data via the `/api/profile` endpoints.
+- Secrets live only in local `.env` files and are never committed. Use the `.env.example` templates.
+- Every private request is authenticated, and each user can only access their own data.
+- AI features are rate-limited, and inputs and uploads are validated.
+- Users can export or permanently delete their data at any time.
+
+If you find a security issue, please report it privately to the maintainer instead of opening a public issue.
+
+---
+
+## Contributing
+
+1. Fork the repository and create a branch, for example `feature/your-feature` or `fix/your-fix`.
+2. Keep changes consistent with the existing code style.
+3. Run `npm run lint` in `frontend/` before committing.
+4. Use clear commit messages, for example `feat(wardrobe): add tag filter`.
+5. Open a pull request against `main`.
 
 ---
 
 ## License
 
-This project is licensed under the [ISC License](https://opensource.org/licenses/ISC) — see the package configuration files for full details.
-
----
-
-<p align="center">
-  Crafted with care for fashion enthusiasts and clean-code advocates.
-</p>
+Released under the [ISC License](https://opensource.org/licenses/ISC).
