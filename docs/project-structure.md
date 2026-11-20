@@ -45,7 +45,7 @@ Digi_Closet/
 frontend/
 ├── public/                         # Public static files served verbatim
 │   ├── favicon.svg                 # Application favicon
-│   └── icons.svg                   # SVG sprite definitions
+│   └── images/editorial/           # Landing and dashboard photography
 ├── src/
 │   ├── components/                 # Reusable UI component library (15 components)
 │   │   ├── Avatar.jsx              # User avatar with fallback initials
@@ -169,12 +169,12 @@ backend/
 │   │   ├── OutfitPlan.js           # A saved outfit assigned to a day, worn flag
 │   │   └── User.js                 # Core user record with style profile & measurements
 │   ├── routes/                     # Express router definitions mounted at `/api/*`
-│   │   ├── authRoutes.js           # POST /api/auth/sync, GET /api/auth/me
+│   │   ├── authRoutes.js           # POST /api/auth/sync
 │   │   ├── chatRoutes.js           # POST /api/chat, GET/DELETE /api/chat/history
 │   │   ├── colorAnalyzerRoutes.js  # POST /api/colors/analyze
 │   │   ├── fashionCriticRoutes.js  # POST /api/fashion/critique
 │   │   ├── outfitRoutes.js         # POST /api/outfits/recommend, CRUD /api/outfits/saved
-│   │   ├── productRoutes.js        # GET /api/products, POST /api/products/saved
+│   │   ├── productRoutes.js        # GET/POST/DELETE /api/products/saved
 │   │   ├── profileRoutes.js        # GET/PUT /api/profile, POST /export, DELETE /account
 │   │   ├── shoppingRoutes.js       # POST /api/shopping/plan, CRUD /api/shopping/lists
 │   │   ├── lookRoutes.js           # /api/looks (try-on, makeover, saved looks)

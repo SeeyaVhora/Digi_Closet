@@ -31,7 +31,6 @@ There is no mock or offline mode: if Gemini fails, the endpoint returns an error
 | Method | Path | Notes |
 | --- | --- | --- |
 | POST | `/auth/sync` | Body `{ name? }`. Creates the Mongo profile on first call and updates the display name. |
-| GET | `/auth/me` | Current user profile. |
 
 ## Profile (`/api/profile`)
 
@@ -48,7 +47,6 @@ There is no mock or offline mode: if Gemini fails, the endpoint returns an error
 | Method | Path | Notes |
 | --- | --- | --- |
 | GET | `/wardrobe` | Query: `search`, `category`, `season`, `occasion`, `color`, `sort` (`oldest`, `name`, `category`). |
-| GET | `/wardrobe/:id` | 403 if the item belongs to someone else. |
 | POST | `/wardrobe/classify` | **AI.** Multipart `image`. Returns `suggestion` `{ name, category, type, colors[primary, secondary?], pattern, style, occasions[], season[], confidence }`. Nothing is saved. |
 | POST | `/wardrobe/upload-image` | Multipart `image` (JPEG/PNG/WebP, max 5MB). Returns `{ imageUrl, imagePath }`. |
 | POST | `/wardrobe` | Body: `name`, `category` (required), `type`, `colors`, `pattern`, `season[]`, `style`, `occasions[]`, `size`, `brand`, `notes`, `imageUrl`, `imagePath`. |

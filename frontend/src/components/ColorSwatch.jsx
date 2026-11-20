@@ -31,16 +31,3 @@ export function ColorSwatch({ color, showLabel = true }) {
     </span>
   );
 }
-
-export function ColorSwatchGrid({ colors = [] }) {
-  return (
-    <div className="color-swatch-grid">
-      {colors.map((c, i) => (
-        <span key={i} className="color-chip">
-          <span className="color-swatch__dot" style={{ width: '1rem', height: '1rem', background: resolveColor(c) }} />
-          {c}
-        </span>
-      ))}
-    </div>
-  );
-}

@@ -43,22 +43,6 @@ const getItems = async (req, res, next) => {
   }
 };
 
-// GET /api/wardrobe/:id
-const getItemById = async (req, res, next) => {
-  try {
-    const item = await ClothingItem.findById(req.params.id);
-    if (!item) {
-      return res.status(404).json({ success: false, message: 'Item not found.' });
-    }
-    if (String(item.owner) !== String(req.user._id)) {
-      return res.status(403).json({ success: false, message: 'You do not have permission to view this item.' });
-    }
-    res.json({ success: true, data: { item } });
-  } catch (error) {
-    next(error);
-  }
-};
-
 // POST /api/wardrobe/classify — Gemini tags an uploaded photo; the user
 // reviews and edits the suggestion before anything is saved.
 const classifyImage = async (req, res, next) => {
@@ -245,7 +229,6 @@ const deleteItem = async (req, res, next) => {
 
 module.exports = {
   getItems,
-  getItemById,
   classifyImage,
   uploadImage,
   addItem,
