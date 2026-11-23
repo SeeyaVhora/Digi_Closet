@@ -25,7 +25,7 @@ const saveProduct = async (req, res, next) => {
         imageUrl: isHttpUrl(imageUrl) ? imageUrl : null,
         link,
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
 
     res.status(201).json({ success: true, message: 'Product saved.', data: { saved } });

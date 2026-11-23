@@ -78,7 +78,7 @@ const authenticate = async (req, res, next) => {
               ...(decoded.phone_number && { phoneNumber: decoded.phone_number }),
             },
           },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
+          { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
         );
       } catch (err) {
         // Two concurrent upserts can still collide; the other one won.

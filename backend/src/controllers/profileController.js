@@ -79,6 +79,7 @@ const Conversation = require('../models/Conversation');
 const Look = require('../models/Look');
 const OutfitPlan = require('../models/OutfitPlan');
 const imageService = require('../services/imageService');
+const { auth: firebaseAuth } = require('../config/firebaseAdmin');
 
 // GET /api/profile/export — exports all user data (profile, wardrobe, outfits, shopping lists)
 const exportUserData = async (req, res, next) => {
@@ -148,10 +149,16 @@ const deleteAccount = async (req, res, next) => {
   try {
     const userId = req.user._id;
 
-    // Looks hold photos of the user, so remove the image files too.
-    const looks = await Look.find({ owner: userId }, 'sourceImagePath resultPath').lean();
-    const lookImages = new Set(looks.flatMap((look) => [look.sourceImagePath, look.resultPath]));
-    await Promise.all([...lookImages].map((p) => imageService.deleteImage(p).catch(() => {})));
+    // Remove the user's photos too: looks (photos of the user) and wardrobe images.
+    const [looks, items] = await Promise.all([
+      Look.find({ owner: userId }, 'sourceImagePath resultPath').lean(),
+      ClothingItem.find({ owner: userId, imagePath: { $type: 'string' } }, 'imagePath').lean(),
+    ]);
+    const images = new Set([
+      ...looks.flatMap((look) => [look.sourceImagePath, look.resultPath]),
+      ...items.map((item) => item.imagePath),
+    ]);
+    await Promise.all([...images].map((p) => imageService.deleteImage(p).catch(() => {})));
 
     await Promise.all([
       ClothingItem.deleteMany({ owner: userId }),
@@ -163,6 +170,20 @@ const deleteAccount = async (req, res, next) => {
       OutfitPlan.deleteMany({ owner: userId }),
       User.findByIdAndDelete(userId),
     ]);
+
+    // Delete the Firebase sign-in account last; otherwise the user can sign
+    // straight back in and a blank profile is recreated.
+    try {
+      await firebaseAuth.deleteUser(req.firebaseUser.uid);
+    } catch (err) {
+      if (err.code !== 'auth/user-not-found') {
+        console.error('Failed to delete Firebase account:', err.message);
+        return res.status(500).json({
+          success: false,
+          message: 'Your closet data was deleted, but the sign-in account could not be removed. Please try again.',
+        });
+      }
+    }
 
     res.json({
       success: true,

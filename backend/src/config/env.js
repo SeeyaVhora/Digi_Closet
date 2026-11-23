@@ -3,6 +3,7 @@ require('dotenv').config();
 const env = {
   PORT: parseInt(process.env.PORT, 10) || 5001,
   NODE_ENV: process.env.NODE_ENV || 'development',
+  CLIENT_URLS: (process.env.CLIENT_URL || '').split(',').map((url) => url.trim()).filter(Boolean),
 
   MONGODB_URI: process.env.MONGODB_URI,
 

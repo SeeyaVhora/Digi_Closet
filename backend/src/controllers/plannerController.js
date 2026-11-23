@@ -53,7 +53,7 @@ const setPlan = async (req, res, next) => {
     const plan = await populatePlan(OutfitPlan.findOneAndUpdate(
       { owner: req.user._id, date },
       { $set: { outfit: outfitId, occasion: typeof occasion === 'string' && occasion.trim() ? occasion.trim() : null } },
-      { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', runValidators: true, setDefaultsOnInsert: true }
     ));
     res.json({ success: true, data: { plan } });
   } catch (error) {

@@ -16,7 +16,9 @@ const sendMessage = async (req, res, next) => {
         return res.status(404).json({ success: false, message: 'Conversation not found.' });
       }
     } else {
-      conversation = await Conversation.create({
+      // Not saved until Gemini answers, so a failed first message doesn't
+      // leave an empty conversation in the history.
+      conversation = new Conversation({
         owner: req.user._id,
         title: message.slice(0, 50),
         messages: [],

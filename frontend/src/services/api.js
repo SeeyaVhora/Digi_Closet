@@ -2,7 +2,9 @@ import axios from 'axios';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 
-const API_BASE_URL = '/api';
+// Same-origin `/api` (proxied by Vite in dev). Set VITE_API_BASE_URL when the
+// backend is deployed on a different origin, e.g. https://api.example.com/api.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // No default Content-Type: axios sets JSON for objects and the multipart
 // boundary for FormData. Forcing JSON here would serialise uploads as JSON.

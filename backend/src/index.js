@@ -12,7 +12,9 @@ const app = express();
 connectDB();
 
 // Middleware
-app.use(cors());
+// CLIENT_URL (comma-separated) limits which sites may call the API.
+// Unset allows any origin, which is fine for local development.
+app.use(cors(env.CLIENT_URLS.length ? { origin: env.CLIENT_URLS } : undefined));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 // Express 5 leaves req.body undefined when a request has no body.

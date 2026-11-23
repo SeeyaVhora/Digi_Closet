@@ -121,21 +121,22 @@ npm install
 cp .env.example .env
 ```
 
-Open `frontend/.env` and configure:
+For local development the defaults work as-is: leave the Firebase values blank
+to use the Auth Emulator demo config, and leave `VITE_API_BASE_URL` blank so
+Vite proxies `/api` to the backend on port 5001.
 
 ```ini
-VITE_API_BASE_URL=/api
+# Blank = same-origin /api (Vite dev proxy)
+VITE_API_BASE_URL=
 
-# Firebase Emulator Configuration
-VITE_FIREBASE_PROJECT_ID=demo-digi-closet
-VITE_FIREBASE_API_KEY=demo-api-key
-VITE_FIREBASE_AUTH_DOMAIN=demo-digi-closet.firebaseapp.com
-VITE_FIREBASE_STORAGE_BUCKET=demo-digi-closet.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
-VITE_FIREBASE_APP_ID=1:123456789:web:abcdef
+# Blank = demo config for the local Firebase Auth Emulator
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_APP_ID=
 
-# Enable Emulator
-VITE_FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
+# Connects to the Auth Emulator on 127.0.0.1:9099. Set to "false" with a real Firebase project.
+VITE_USE_FIREBASE_EMULATOR=true
 ```
 
 #### C. Start Frontend Dev Server
