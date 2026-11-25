@@ -6,8 +6,7 @@ import { getErrorMessage } from '../services/api';
 import { USE_AUTH_EMULATOR } from '../firebase';
 import Input from '../components/Input';
 import Button from '../components/Button';
-import AuthShell, { AuthMethodTabs } from '../components/AuthShell';
-import PhoneAuthForm from '../components/PhoneAuthForm';
+import AuthShell from '../components/AuthShell';
 
 const FRIENDLY_ERRORS = {
   'auth/invalid-credential': 'Invalid email or password.',
@@ -33,7 +32,6 @@ export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [method, setMethod] = useState('email');
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -89,24 +87,17 @@ export default function Login() {
         <Link to="/register" className="auth-card__link">Create one</Link>
       </>}
     >
-      <AuthMethodTabs method={method} onChange={(value) => { setMethod(value); setError(''); }} />
-      {method === 'phone' ? (
-        <PhoneAuthForm
-          onSuccess={(isNewUser) => navigate(isNewUser ? '/onboarding' : redirectTo, { replace: true })}
-        />
-      ) : (
-        <form onSubmit={handleSubmit} className="auth-card__form">
-          <Input label="Email" type="email" name="email" placeholder="you@example.com" icon={Mail} value={form.email} onChange={handleChange} />
-          <Input label="Password" type="password" name="password" placeholder="Enter your password" icon={Lock} value={form.password} onChange={handleChange} />
+      <form onSubmit={handleSubmit} className="auth-card__form">
+        <Input label="Email" type="email" name="email" placeholder="you@example.com" icon={Mail} value={form.email} onChange={handleChange} />
+        <Input label="Password" type="password" name="password" placeholder="Enter your password" icon={Lock} value={form.password} onChange={handleChange} />
 
-          {error && <div className="alert alert--error">{error}</div>}
+        {error && <div className="alert alert--error">{error}</div>}
 
-          <Button type="submit" fullWidth loading={loading}>Sign In</Button>
-          <Button type="button" variant="outline" fullWidth onClick={handleGoogle} disabled={loading}>
-            Continue with Google
-          </Button>
-        </form>
-      )}
+        <Button type="submit" fullWidth loading={loading}>Sign In</Button>
+        <Button type="button" variant="outline" fullWidth onClick={handleGoogle} disabled={loading}>
+          Continue with Google
+        </Button>
+      </form>
     </AuthShell>
   );
 }

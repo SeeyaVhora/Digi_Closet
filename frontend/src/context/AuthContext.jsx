@@ -4,7 +4,6 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
-  signInWithPhoneNumber,
   signOut,
   updateProfile as updateFirebaseProfile,
 } from 'firebase/auth';
@@ -94,24 +93,6 @@ export const AuthProvider = ({ children }) => {
     [signInAndSync]
   );
 
-  // Phone sign-in is two steps: send an SMS code (returns a confirmation),
-  // then confirm the code. Confirming creates the account if it's new.
-  const sendPhoneCode = useCallback(
-    (phoneNumber, recaptchaVerifier) => signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier),
-    []
-  );
-
-  const confirmPhoneCode = useCallback(
-    (confirmation, code, name) => signInAndSync(async () => {
-      const credential = await confirmation.confirm(code);
-      if (name && !credential.user.displayName) {
-        await updateFirebaseProfile(credential.user, { displayName: name });
-      }
-      return credential;
-    }, () => name),
-    [signInAndSync]
-  );
-
   const logout = useCallback(async () => {
     await signOut(auth);
     setUser(null);
@@ -126,8 +107,6 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     loginWithGoogle,
-    sendPhoneCode,
-    confirmPhoneCode,
     logout,
     refreshProfile: syncMongoProfile,
   };

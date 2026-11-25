@@ -27,23 +27,3 @@ export default function AuthShell({ image, quote, eyebrow, title, subtitle, chil
     </div>
   );
 }
-
-/** Email / phone switch shown above the sign-in form. */
-export function AuthMethodTabs({ method, onChange }) {
-  return (
-    <div className="auth-tabs" role="tablist" aria-label="Sign-in method">
-      {[['email', 'Email'], ['phone', 'Phone number']].map(([value, label]) => (
-        <button
-          key={value}
-          type="button"
-          role="tab"
-          aria-selected={method === value}
-          className={`auth-tabs__tab ${method === value ? 'auth-tabs__tab--active' : ''}`}
-          onClick={() => onChange(value)}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-}

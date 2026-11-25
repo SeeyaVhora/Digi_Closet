@@ -5,8 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { getErrorMessage } from '../services/api';
 import Input from '../components/Input';
 import Button from '../components/Button';
-import AuthShell, { AuthMethodTabs } from '../components/AuthShell';
-import PhoneAuthForm from '../components/PhoneAuthForm';
+import AuthShell from '../components/AuthShell';
 
 const FRIENDLY_ERRORS = {
   'auth/email-already-in-use': 'An account with this email already exists.',
@@ -22,7 +21,6 @@ export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [method, setMethod] = useState('email');
   const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
@@ -84,27 +82,19 @@ export default function Register() {
         <Link to="/login" className="auth-card__link">Sign in</Link>
       </>}
     >
-      <AuthMethodTabs method={method} onChange={(value) => { setMethod(value); setError(''); }} />
-      {method === 'phone' ? (
-        <PhoneAuthForm
-          askName
-          onSuccess={(isNewUser) => navigate(isNewUser ? '/onboarding' : '/dashboard', { replace: true })}
-        />
-      ) : (
-        <form onSubmit={handleSubmit} className="auth-card__form">
-          <Input label="Full Name" name="name" placeholder="John Doe" icon={User} value={form.name} onChange={handleChange} />
-          <Input label="Email" type="email" name="email" placeholder="you@example.com" icon={Mail} value={form.email} onChange={handleChange} />
-          <Input label="Password" type="password" name="password" placeholder="At least 6 characters" icon={Lock} value={form.password} onChange={handleChange} />
-          <Input label="Confirm Password" type="password" name="confirmPassword" placeholder="Confirm your password" icon={Lock} value={form.confirmPassword} onChange={handleChange} />
+      <form onSubmit={handleSubmit} className="auth-card__form">
+        <Input label="Full Name" name="name" placeholder="John Doe" icon={User} value={form.name} onChange={handleChange} />
+        <Input label="Email" type="email" name="email" placeholder="you@example.com" icon={Mail} value={form.email} onChange={handleChange} />
+        <Input label="Password" type="password" name="password" placeholder="At least 6 characters" icon={Lock} value={form.password} onChange={handleChange} />
+        <Input label="Confirm Password" type="password" name="confirmPassword" placeholder="Confirm your password" icon={Lock} value={form.confirmPassword} onChange={handleChange} />
 
-          {error && <div className="alert alert--error">{error}</div>}
+        {error && <div className="alert alert--error">{error}</div>}
 
-          <Button type="submit" fullWidth loading={loading}>Create Account</Button>
-          <Button type="button" variant="outline" fullWidth onClick={handleGoogle} disabled={loading}>
-            Continue with Google
-          </Button>
-        </form>
-      )}
+        <Button type="submit" fullWidth loading={loading}>Create Account</Button>
+        <Button type="button" variant="outline" fullWidth onClick={handleGoogle} disabled={loading}>
+          Continue with Google
+        </Button>
+      </form>
     </AuthShell>
   );
 }
