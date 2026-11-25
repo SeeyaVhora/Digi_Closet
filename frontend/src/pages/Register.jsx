@@ -74,7 +74,6 @@ export default function Register() {
     <AuthShell
       image="/images/editorial/hero-studio-shirt.jpg"
       quote="Your style. Your world."
-      eyebrow="Join DigiCloset"
       title="Create your account"
       subtitle="Build your digital wardrobe and meet your personal AI stylist."
       footer={<>

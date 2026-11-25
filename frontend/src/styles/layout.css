@@ -6,6 +6,8 @@
 .auth-shell__visual { display: none; }
 .auth-shell__main { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-10); padding: var(--space-10) var(--space-4); }
 .auth-shell__panel { display: flex; flex-direction: column; gap: var(--space-3); width: 100%; max-width: 25rem; }
+.auth-shell__back { display: inline-flex; align-items: center; gap: var(--space-2); align-self: flex-start; margin-bottom: var(--space-6); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); transition: color var(--transition-fast); }
+.auth-shell__back:hover { color: var(--text-heading); }
 .auth-shell__title { font-size: clamp(2.25rem, 4vw, 3rem); font-weight: 400; line-height: 1.05; }
 .auth-shell__subtitle { margin-bottom: var(--space-5); font-size: var(--text-sm); line-height: 1.7; color: var(--text-secondary); }
 .auth-shell__footer { margin-top: var(--space-6); padding-top: var(--space-5); border-top: 1px solid var(--border-subtle); font-size: var(--text-sm); color: var(--text-secondary); }

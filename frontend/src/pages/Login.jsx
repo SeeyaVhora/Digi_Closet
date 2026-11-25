@@ -79,7 +79,6 @@ export default function Login() {
     <AuthShell
       image="/images/editorial/camel-trench.jpg"
       quote="Every look starts with what you already own."
-      eyebrow="Welcome back"
       title="Sign in to your studio"
       subtitle="Your wardrobe, outfits and saved looks are waiting."
       footer={<>
